@@ -1,5 +1,5 @@
 // Moteur de poker : évaluation, pots, déroulement d'une main (Hold'em / PLO)
-const CONFIG={STACK:5000,REBUY:1000,SEATS:6,UNIT:100,SB:100,BB:200};
+const CONFIG={STACK:5000,REBUY:1000,REBUY_OPTIONS:[1000,2000,3000,4000,5000],SEATS:6,UNIT:100,SB:100,BB:200};
 const RANKS='23456789TJQKA', SUITS='shdc';
 function newDeck(){const d=[];for(const r of RANKS)for(const s of SUITS)d.push(r+s);for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}return d;}
 const rv=c=>RANKS.indexOf(c[0])+2;
@@ -112,8 +112,8 @@ class Table{
         for(const w of ws){const x=Math.min(odd,U);odd-=x;const a=share+x;this.seats[w].chips+=a;res.push({seat:w,amount:a,name:this.seats[w].name,hand:ev[w].name});this.log.push(this.seats[w].name+' gagne '+a+' ('+ev[w].name+')');}}
       h.shown=Object.fromEntries(live.map(j=>[j,{hole:h.pl[j].hole,name:ev[j].name}]));}
     h.results=res;this.stage='showdown';this.toAct=-1;}
-  rebuy(id){const i=this.seatOf(id);if(i<0||this.seats[i].chips>0)return false;if(this.hand&&this.hand.pl[i]&&!['waiting','showdown','choosing'].includes(this.stage))return false;
-    this.seats[i].chips+=CONFIG.REBUY;this.seats[i].rebuys++;this.log.push(this.seats[i].name+' se recave (+1 000)');return true;}
+  rebuy(id,amount=CONFIG.REBUY){amount=+amount;if(!CONFIG.REBUY_OPTIONS.includes(amount))return false;const i=this.seatOf(id);if(i<0||this.seats[i].chips>0)return false;if(this.hand&&this.hand.pl[i]&&!['waiting','showdown','choosing'].includes(this.stage))return false;
+    this.seats[i].chips+=amount;this.seats[i].rebuys++;this.seats[i].rebuyTotal=(this.seats[i].rebuyTotal||0)+amount;this.log.push(this.seats[i].name+' se recave (+'+amount.toLocaleString('fr-FR').replace(/\s/g,' ')+')');return true;}
   toJSON(){const seats=this.seats.map((s,i)=>s&&{...s,connected:false,chips:s.chips+(this.hand&&this.hand.pl[i]&&this.stage!=='showdown'?this.hand.pl[i].total:0)});
     return {seats,pendingMode:this.pendingMode,sb:this.sb,bb:this.bb,mode:this.mode,variant:this.variant,button:this.button,log:this.log.slice(-20)};}
   static fromJSON(d){const t=new Table(d);Object.assign(t,{pendingMode:d.pendingMode||null,seats:d.seats,variant:d.variant,button:d.button,log:d.log||[]});return t;}
@@ -122,7 +122,7 @@ class Table{
       chooser:this.stage==='choosing'?this.chooser:-1,choiceDeadline:this.choiceDeadline,log:this.log.slice(-8),
       board:h?h.board:[],pot:h?this.potTotal():0,currentBet:h?h.currentBet:0,results:h?h.results:null,
       limits:(h&&me===this.toAct&&me>=0)?this.limits(me):null,
-      spectator:me<0,seats:this.seats.map((s,i)=>s&&{name:s.name,rebuys:s.rebuys||0,chips:s.chips,connected:s.connected,
+      spectator:me<0,seats:this.seats.map((s,i)=>s&&{name:s.name,rebuys:s.rebuys||0,rebuyTotal:s.rebuyTotal||0,chips:s.chips,connected:s.connected,
         inHand:!!(h&&h.pl[i]),folded:h&&h.pl[i]?h.pl[i].folded:false,allin:h&&h.pl[i]?h.pl[i].allin:false,bet:h&&h.pl[i]?h.pl[i].bet:0,
         hole:h&&h.pl[i]?(i===me?h.pl[i].hole:(h.shown&&h.shown[i]&&this.stage==='showdown'?h.shown[i].hole:h.pl[i].hole.map(()=>'??'))):[],
         handName:h&&h.shown&&h.shown[i]?h.shown[i].name:null})};}

@@ -24,6 +24,9 @@ for(const [n,gaps] of [[4,[1,4]],[5,[2]],[6,[]]])t(n+' joueurs (sièges vides '+
   for(let h=0;h<n;h++){T.startHand();btns.push(T.button);a(occ.includes(T.hand.sbI)&&occ.includes(T.hand.bbI));a.equal(T.hand.sbI,occ[(occ.indexOf(T.button)+1)%n]);a.equal(T.hand.bbI,occ[(occ.indexOf(T.button)+2)%n]);
     let g=0;while(T.stage!=='showdown'&&g++<100){const i=T.toAct;a(occ.includes(i));const L=T.limits(i);T.act(T.seats[i].id,L.toCall?'call':'check');}a.equal(T.seats.reduce((s,x)=>s+(x?x.chips:0),0),5000*n);}
   a.deepEqual([...btns].sort(),[...occ].sort());});
+t('recave au choix 1 000 à 5 000 par 1 000',()=>{const T=sim('holdem');for(const v of [1000,2000,3000,4000,5000]){T.seats[1].chips=0;a(T.rebuy('b',v),'refus '+v);a.equal(T.seats[1].chips,v);}
+  a.equal(T.seats[1].rebuys,5);a.equal(T.seats[1].rebuyTotal,15000);for(const v of [0,500,1500,6000,-1000,'abc']){T.seats[1].chips=0;a.equal(T.rebuy('b',v),false,'accepté '+v);}
+  T.seats[1].chips=100;a.equal(T.rebuy('b',1000),false);a.equal(Table.fromJSON(JSON.parse(JSON.stringify(T.toJSON()))).seats[1].rebuyTotal,15000);});
 t('montants multiples de 100',()=>{const T=sim('holdem');T.startHand();const L=T.limits(T.toAct);a.equal(T.act(T.seats[T.toAct].id,'raise',L.minTo+50),false);a(T.act(T.seats[T.toAct].id,'raise',L.minTo+100));});
 const T=sim('dealer');T.startHand();a.equal(T.stage,'choosing');a.equal(T.act('a','check'),false);
 a.equal(T.chooseVariant(T.seats[(T.chooser+1)%3].id,'omaha'),false);T.chooseVariant(T.seats[T.chooser].id,'omaha');a.equal(T.variant,'omaha');a.equal(T.stage,'preflop');a.equal(T.hand.pl[0].hole.length,4);

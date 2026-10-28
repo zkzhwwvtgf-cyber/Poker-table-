@@ -16,7 +16,7 @@ io.on('connection',sock=>{let room=null,tok=null;
   sock.on('choose',g(v=>room.t.chooseVariant(tok,v)));
   sock.on('act',g(({action,amount})=>room.t.act(tok,action,amount)));
   sock.on('settings',g(({mode,sb,bb})=>{if(room.host!==tok)return;const t=room.t;if(mode)t.setMode(mode);if(!['waiting','showdown'].includes(t.stage))return;if(!sb&&!bb)return;if(+sb&&sb%100===0)t.sb=+sb;if(+bb&&bb%100===0)t.bb=+bb;t.log.push('Réglages : '+({holdem:"Hold'em",omaha:'Omaha PL',dealer:'Choix du donneur'})[t.mode]+' '+t.sb+'/'+t.bb);}));
-  sock.on('rebuy',g(()=>room.t.rebuy(tok)));
+  sock.on('rebuy',g(amount=>room.t.rebuy(tok,amount===undefined?1000:amount)));
   sock.on('disconnect',()=>{if(!room)return;delete room.sockets[sock.id];if(!Object.values(room.sockets).includes(tok)){const i=room.t.seatOf(tok);if(i>=0)room.t.seats[i].connected=false;}push(room);});
 });
 srv.listen(process.env.PORT||3000,'0.0.0.0',()=>console.log('Poker sur :'+(process.env.PORT||3000)));
