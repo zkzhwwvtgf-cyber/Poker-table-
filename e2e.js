@@ -11,6 +11,4 @@ const by=i=>P.find(p=>p.st.me===i);by(A.st.chooser).emit('choose','omaha');await
 console.log('variante',A.st.variant,'mes cartes',A.st.seats[0].hole.join(' '),'autres',A.st.seats[1].hole.join(' '));
 let g=0;while(A.st.stage!=='showdown'&&g++<60){const p=by(A.st.toAct),L=p.st.limits;p.emit('act',{action:L.toCall?(L.canRaise&&g<3?'raise':'call'):'check',amount:L.maxTo});await w(250);}
 console.log('fin',A.st.stage,JSON.stringify(A.st.results),'total',A.st.seats.reduce((s,x)=>s+(x?x.chips:0),0));
-const pre=A.st.seats.map(x=>x&&x.chips).join(',');P.forEach(p=>p.disconnect());await w(800);
-execSync('pkill -f "node[ ]server.js"');await w(5000);const B=mk(P[0].tok);await w(1500);await J(B,code,'Steph');await w(500);
-console.log('après crash+relance: piles identiques',B.st.seats.map(x=>x&&x.chips).join(',')===pre,'siège',B.st.me);process.exit(0);})();
+process.exit(0);})();

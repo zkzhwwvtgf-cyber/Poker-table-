@@ -36,3 +36,11 @@ setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.variant,'omaha','délai -> 
 {const T=sim('holdem');T.setMode('omaha');a.equal(T.mode,'omaha');T.startHand();a.equal(T.variant,'omaha');a.equal(T.hand.pl[0].hole.length,4);
  T.setMode('dealer');a.equal(T.mode,'omaha');a.equal(T.pendingMode,'dealer');a(T.log.at(-1).includes('à partir de la prochaine main'));
  while(T.stage!=='showdown')T.act(T.seats[T.toAct].id,'fold');T.startHand();a.equal(T.mode,'dealer');a.equal(T.stage,'choosing');console.log('✓ changement de variante (immédiat / prochaine main)');}
+{const T=sim('holdem');T.seats[1].chips=0;T.rebuy('b',3000);a.equal(T.view('a').seats[1].engaged,8000);a.equal(T.view('a').seats[1].bilan,-5000);
+ const sum=()=>T.view('a').seats.filter(x=>x).reduce((s,x)=>s+x.bilan,0);a.equal(sum(),-5000+0);// pile 3000 sur 8000 engagés, autres 0
+ T.seats[0].chips+=5000;a.equal(sum(),0);console.log('✓ engagement / net / somme nulle');
+ T.startHand();T.fullReset();a.equal(T.stage,'waiting');a(T.seats.filter(x=>x).every(x=>x.chips===5000&&x.rebuys===0&&x.engaged===5000));console.log('✓ réinitialisation complète');
+ T.startHand();T.addPlayer('d','D');T.seats[0].chips=1234;T.resetStacks();a.equal(T.pendingReset,true);while(T.stage!=='showdown')T.act(T.seats[T.toAct].id,'fold');T.startHand();
+ a(T.seats.filter(x=>x).every(x=>x.chips+(T.hand.pl[T.seats.indexOf(x)]?T.hand.pl[T.seats.indexOf(x)].total:0)===5000));console.log('✓ nouveau joueur -> 5 000 à la fin de la main en cours');
+ const id=T.seats[T.toAct].id,before=T.toAct;T.removePlayer(id);a.equal(T.seats[before],null);a.notEqual(T.toAct,before);
+ let g=0;while(T.stage!=='showdown'&&g++<50){const L=T.limits(T.toAct);T.act(T.seats[T.toAct].id,L.toCall?'call':'check');}a.equal(T.stage,'showdown');console.log('✓ départ immédiat pendant la main');}

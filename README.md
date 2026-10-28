@@ -8,12 +8,12 @@ Jetons 1 500 (violet) / 200 (bleu) / 100 (blanc), monnaie rendue automatiquement
     ./supervise.sh    # serveur seul supervisé, http://localhost:3000
     npm start         # serveur seul (PORT, DATA_FILE configurables)
     npm test          # tests moteur
-    node e2e.js http://localhost:3000   # 7 clients simulés (6 assis + 1 spectateur), une main, crash/restauration
-État des tables sauvegardé dans data/tables.json (piles, recaves) : un redémarrage ne perd rien (main en cours remboursée).
+    node e2e.js http://localhost:3000   # 7 clients simulés (6 assis + 1 spectateur), une main
+Sessions propres : aucune sauvegarde ni restauration (ni tables.json, ni siège mémorisé dans le navigateur). Un joueur qui se déconnecte quitte la table immédiatement ; une table vide est supprimée. Chaque arrivée remet toutes les piles à 5 000 (à la fin de la main en cours). Bouton hôte « Réinitialiser », panneau « Bilan » (engagé, pile, net, recaves).
 
 ## Déployer ailleurs
-    docker build -t poker . && docker run -p 3000:3000 -v $PWD/data:/app/data poker
-Compatible Render / Railway / Fly.io (commande `npm start`, variable PORT). Prévoir un volume pour data/.
+    docker build -t poker . && docker run -p 3000:3000 poker
+Compatible Render / Railway / Fly.io (commande `npm start`, variable PORT).
 
 ## Inviter
 « Inviter par SMS » ouvre l'appli Messages du téléphone de l'hôte (lien sms:) avec le lien /t/CODE prérempli ; rien n'est envoyé automatiquement.

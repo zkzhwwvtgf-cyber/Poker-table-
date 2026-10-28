@@ -41,7 +41,7 @@ function sidePots(contribs){
 class Table{
   constructor(o={}){this.seats=Array(CONFIG.SEATS).fill(null);this.sb=o.sb||CONFIG.SB;this.bb=o.bb||CONFIG.BB;this.mode=o.mode||'holdem';
     this.variant=this.mode==='omaha'?'omaha':'holdem';this.button=-1;this.hand=null;this.stage='waiting';this.log=[];this.choiceTimeout=o.choiceTimeout||20000;this.onChange=()=>{};this.timer=null;}
-  addPlayer(id,name,chips=CONFIG.STACK){let i=this.seats.findIndex(s=>!s);if(i<0)return -1;this.seats[i]={id,name,chips,connected:true,sitOut:false,rebuys:0};return i;}
+  addPlayer(id,name,chips=CONFIG.STACK){let i=this.seats.findIndex(s=>!s);if(i<0)return -1;this.seats[i]={id,name,chips,connected:true,sitOut:false,rebuys:0,rebuyTotal:0,engaged:chips};return i;}
   seatOf(id){return this.seats.findIndex(s=>s&&s.id===id);}
   next(i,pred){const N=this.seats.length;for(let k=1;k<=N;k++){const j=(i+k)%N;if(this.seats[j]&&pred(this.seats[j],j))return j;}return -1;}
   ready(){return this.seats.filter(s=>s&&s.chips>0&&!s.sitOut);}
@@ -51,7 +51,7 @@ class Table{
   startHand(){
     if(this.stage!=='waiting'&&this.stage!=='showdown')return false;
     if(this.ready().length<2)return false;
-    if(this.pendingMode){this.mode=this.pendingMode;this.pendingMode=null;}
+    if(this.pendingMode){this.mode=this.pendingMode;this.pendingMode=null;}if(this.pendingReset)this.resetStacks();
     this.button=this.next(this.button<0?this.seats.length-1:this.button,s=>s.chips>0&&!s.sitOut);
     if(this.mode==='dealer'){this.stage='choosing';this.chooser=this.button;this.hand=null;
       clearTimeout(this.timer);this.choiceDeadline=Date.now()+this.choiceTimeout;
@@ -70,7 +70,7 @@ class Table{
     const ids=Object.keys(pl).map(Number);
     let sbI,bbI;if(ids.length===2){sbI=this.button;bbI=this.next(sbI,(s,j)=>pl[j]);}else{sbI=this.next(this.button,(s,j)=>pl[j]);bbI=this.next(sbI,(s,j)=>pl[j]);}
     this.post(sbI,this.sb);this.post(bbI,this.bb);this.hand.currentBet=this.bb;this.hand.sbI=sbI;this.hand.bbI=bbI;
-    this.toAct=this.next(bbI,(s,j)=>pl[j]&&!pl[j].allin);this.checkRound();
+    this.toAct=this.next(bbI,(s,j)=>pl[j]&&!pl[j].allin);this.hand.turnStart=Date.now();this.checkRound();
   }
   post(i,a){const p=this.hand.pl[i],s=this.seats[i];a=Math.min(a,s.chips);s.chips-=a;p.bet+=a;p.total+=a;if(!s.chips)p.allin=true;}
   potTotal(){return Object.values(this.hand.pl).reduce((x,p)=>x+p.total,0);}
@@ -89,14 +89,14 @@ class Table{
       if(to>h.currentBet){h.currentBet=to;for(const q of Object.values(h.pl))q.acted=false;}
       this.post(i,to-p.bet);this.log.push(nm+(p.allin?' tapis à ':' relance à ')+to);}
     else return false;
-    p.acted=true;
-    this.toAct=this.next(i,(s2,j)=>h.pl[j]&&!h.pl[j].folded&&!h.pl[j].allin);this.checkRound();return true;}
+    p.acted=true;p.last={type:p.allin?'allin':action,amount:action==='call'||action==='raise'?p.bet:0};
+    this.toAct=this.next(i,(s2,j)=>h.pl[j]&&!h.pl[j].folded&&!h.pl[j].allin);h.turnStart=Date.now();this.checkRound();return true;}
   checkRound(){const h=this.hand,live=Object.entries(h.pl).filter(([,p])=>!p.folded);
     if(live.length===1)return this.finish();
     const canAct=live.filter(([,p])=>!p.allin);
     const done=canAct.every(([,p])=>p.acted&&p.bet===h.currentBet)||(canAct.length<=1&&canAct.every(([,p])=>p.bet>=h.currentBet));
     if(!done)return;
-    for(const p of Object.values(h.pl)){p.bet=0;p.acted=false;}h.currentBet=0;h.minRaise=this.bb;
+    for(const p of Object.values(h.pl)){p.bet=0;p.acted=false;if(p.last&&!['fold','allin'].includes(p.last.type))p.last=null;}h.turnStart=Date.now();h.currentBet=0;h.minRaise=this.bb;
     const nx={preflop:'flop',flop:'turn',turn:'river',river:'showdown'}[this.stage];
     if(nx==='showdown')return this.finish();
     this.stage=nx;h.board.push(...h.deck.splice(-(nx==='flop'?3:1)));
@@ -112,17 +112,27 @@ class Table{
         for(const w of ws){const x=Math.min(odd,U);odd-=x;const a=share+x;this.seats[w].chips+=a;res.push({seat:w,amount:a,name:this.seats[w].name,hand:ev[w].name});this.log.push(this.seats[w].name+' gagne '+a+' ('+ev[w].name+')');}}
       h.shown=Object.fromEntries(live.map(j=>[j,{hole:h.pl[j].hole,name:ev[j].name}]));}
     h.results=res;this.stage='showdown';this.toAct=-1;}
+  resetStacks(){if(this.stage!=='waiting'&&this.stage!=='showdown'){this.pendingReset=true;this.log.push('Nouveau joueur : piles remises à 5 000 à la prochaine main');return;}
+    this.pendingReset=false;for(const s of this.seats)if(s){s.chips=CONFIG.STACK;s.rebuys=0;s.rebuyTotal=0;s.engaged=CONFIG.STACK;}this.log.push('Nouveau joueur : toutes les piles remises à 5 000');}
+  fullReset(){clearTimeout(this.timer);this.hand=null;this.stage='waiting';this.toAct=-1;this.pendingReset=false;
+    for(const s of this.seats)if(s){s.chips=CONFIG.STACK;s.rebuys=0;s.rebuyTotal=0;s.engaged=CONFIG.STACK;}this.log.push('Table réinitialisée : toutes les piles à 5 000, compteurs remis à zéro');return true;}
+  removePlayer(id){const i=this.seatOf(id);if(i<0)return false;const nm=this.seats[i].name,h=this.hand,active=h&&h.pl[i]&&['preflop','flop','turn','river'].includes(this.stage);
+    if(this.stage==='choosing'&&this.chooser===i){clearTimeout(this.timer);this.seats[i]=null;this.stage='waiting';this.log.push(nm+' quitte la table');return true;}
+    if(active&&!h.pl[i].folded){h.pl[i].folded=true;h.pl[i].last={type:'fold'};}
+    this.seats[i]=null;this.log.push(nm+' quitte la table');
+    if(active){if(this.toAct===i)this.toAct=this.next(i,(s2,j)=>h.pl[j]&&!h.pl[j].folded&&!h.pl[j].allin);h.turnStart=Date.now();this.checkRound();}
+    return true;}
   rebuy(id,amount=CONFIG.REBUY){amount=+amount;if(!CONFIG.REBUY_OPTIONS.includes(amount))return false;const i=this.seatOf(id);if(i<0||this.seats[i].chips>0)return false;if(this.hand&&this.hand.pl[i]&&!['waiting','showdown','choosing'].includes(this.stage))return false;
-    this.seats[i].chips+=amount;this.seats[i].rebuys++;this.seats[i].rebuyTotal=(this.seats[i].rebuyTotal||0)+amount;this.log.push(this.seats[i].name+' se recave (+'+amount.toLocaleString('fr-FR').replace(/\s/g,' ')+')');return true;}
+    this.seats[i].chips+=amount;this.seats[i].rebuys++;this.seats[i].rebuyTotal=(this.seats[i].rebuyTotal||0)+amount;this.seats[i].engaged=(this.seats[i].engaged||CONFIG.STACK)+amount;this.log.push(this.seats[i].name+' se recave (+'+amount.toLocaleString('fr-FR').replace(/\s/g,' ')+')');return true;}
   toJSON(){const seats=this.seats.map((s,i)=>s&&{...s,connected:false,chips:s.chips+(this.hand&&this.hand.pl[i]&&this.stage!=='showdown'?this.hand.pl[i].total:0)});
     return {seats,pendingMode:this.pendingMode,sb:this.sb,bb:this.bb,mode:this.mode,variant:this.variant,button:this.button,log:this.log.slice(-20)};}
   static fromJSON(d){const t=new Table(d);Object.assign(t,{pendingMode:d.pendingMode||null,seats:d.seats,variant:d.variant,button:d.button,log:d.log||[]});return t;}
   view(id){const me=this.seatOf(id),h=this.hand;
-    return {stage:this.stage,mode:this.mode,pendingMode:this.pendingMode||null,variant:this.variant,sb:this.sb,bb:this.bb,button:this.button,toAct:this.toAct,me,
+    return {turnStart:h?h.turnStart:0,stage:this.stage,mode:this.mode,pendingMode:this.pendingMode||null,variant:this.variant,sb:this.sb,bb:this.bb,button:this.button,toAct:this.toAct,me,
       chooser:this.stage==='choosing'?this.chooser:-1,choiceDeadline:this.choiceDeadline,log:this.log.slice(-8),
       board:h?h.board:[],pot:h?this.potTotal():0,currentBet:h?h.currentBet:0,results:h?h.results:null,
       limits:(h&&me===this.toAct&&me>=0)?this.limits(me):null,
-      spectator:me<0,seats:this.seats.map((s,i)=>s&&{name:s.name,rebuys:s.rebuys||0,rebuyTotal:s.rebuyTotal||0,chips:s.chips,connected:s.connected,
+      spectator:me<0,seats:this.seats.map((s,i)=>s&&{name:s.name,rebuys:s.rebuys||0,rebuyTotal:s.rebuyTotal||0,engaged:s.engaged||CONFIG.STACK,bilan:s.chips+(h&&h.pl[i]&&this.stage!=='showdown'?h.pl[i].total:0)-(s.engaged||CONFIG.STACK),last:h&&h.pl[i]?h.pl[i].last||null:null,chips:s.chips,connected:s.connected,
         inHand:!!(h&&h.pl[i]),folded:h&&h.pl[i]?h.pl[i].folded:false,allin:h&&h.pl[i]?h.pl[i].allin:false,bet:h&&h.pl[i]?h.pl[i].bet:0,
         hole:h&&h.pl[i]?(i===me?h.pl[i].hole:(h.shown&&h.shown[i]&&this.stage==='showdown'?h.shown[i].hole:h.pl[i].hole.map(()=>'??'))):[],
         handName:h&&h.shown&&h.shown[i]?h.shown[i].name:null})};}
