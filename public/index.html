@@ -1,0 +1,74 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Table de Poker entre amis</title><style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:radial-gradient(#2b2b3a,#0d0d14);color:#fff;min-height:100vh;overflow-x:hidden}
+.card{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:42px;height:60px;background:#fff;border-radius:6px;color:#111;font-weight:700;font-size:18px;margin:2px;box-shadow:0 2px 6px #0008;line-height:1}
+.card.r{color:#d21}.card.back{background:repeating-linear-gradient(45deg,#a11 0 6px,#c33 6px 12px);border:3px solid #fff}.card small{font-size:20px}
+.sm .card{width:30px;height:43px;font-size:13px}.sm .card small{font-size:14px}
+#lobby{max-width:420px;margin:40px auto;padding:24px;background:#1b1b28;border-radius:16px}input,select,button{font-size:16px;padding:10px;border-radius:8px;border:0;margin:4px 0;width:100%}
+button{background:#e8b130;color:#111;font-weight:700;cursor:pointer}button.alt{background:#444;color:#fff}button:disabled{opacity:.4}
+#game{display:none;padding:8px}.top{display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:center}.top button{width:auto;padding:8px 12px;font-size:14px}
+.tablewrap{position:relative;width:100%;max-width:900px;aspect-ratio:1.7;margin:30px auto 10px}
+.felt{position:absolute;inset:8%;border-radius:50%;background:radial-gradient(#1f8a4c,#0c5a2e 70%);border:14px solid #5a3417;box-shadow:inset 0 0 40px #000a,0 10px 30px #000}
+.center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center}.pot{background:#0006;padding:4px 12px;border-radius:12px;margin-top:4px;display:inline-block}
+.badge{display:inline-block;background:#e8b130;color:#111;padding:3px 10px;border-radius:10px;font-weight:800;font-size:13px;margin-bottom:4px}
+.seat{position:absolute;transform:translate(-50%,-50%);text-align:center;min-width:90px}.seat .box{background:#111c;border:2px solid #555;border-radius:12px;padding:3px 8px;font-size:13px}
+.seat.turn .box{border-color:#ffd84a;box-shadow:0 0 14px #ffd84a}.seat.fold{opacity:.4}.seat.off .box{border-style:dashed}
+.bet{font-size:12px;background:#000a;border-radius:10px;padding:1px 6px;margin-top:2px;display:inline-block}.chip{display:inline-block;width:12px;height:12px;border-radius:50%;background:#e33;border:2px dashed #fff;vertical-align:middle;margin-right:3px}
+.stk{display:inline-flex;align-items:flex-end;gap:2px;vertical-align:bottom}.col{display:flex;flex-direction:column-reverse}
+.ch{width:18px;height:6px;border-radius:50%/50%;margin-top:-2px;border:1px solid #0008;box-shadow:inset 0 0 0 2px #fff6}
+.c1500{background:#7b2cbf}.c200{background:#1d6fd6}.c100{background:#e0e0e0}
+.cbtn{width:46px!important;height:46px;border-radius:50%!important;border:4px dashed #fff8!important;color:#fff!important;font-size:12px!important;padding:0!important;flex:0 0 46px!important;min-width:0!important}
+.cbtn.c100{color:#111!important}.rb{display:inline-block;background:#c0392b;font-size:10px;border-radius:8px;padding:0 5px;margin-top:2px}
+.dealer{display:inline-block;background:#fff;color:#000;border-radius:50%;width:20px;height:20px;font-size:12px;font-weight:900;line-height:20px}
+#actions{max-width:600px;margin:auto;display:flex;flex-wrap:wrap;gap:6px}#actions button{flex:1;min-width:80px}#slider{width:100%}
+#log{max-width:600px;margin:8px auto;font-size:12px;opacity:.7}#prompt{text-align:center;margin:8px}#prompt button{width:auto;padding:12px 24px;margin:4px}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center}.modal>div{background:#1b1b28;padding:20px;border-radius:14px;max-width:360px;width:90%}
+@media(max-width:600px){.tablewrap{aspect-ratio:.8}.felt{inset:6% 10%}.seat{min-width:70px}.seat .box{font-size:11px}}
+</style></head><body>
+<div id="lobby"><h1>♠ Poker entre amis</h1><p>Jetons virtuels uniquement — 5 000 par joueur, 6 places max.</p>
+<input id="name" placeholder="Ton pseudo" maxlength="14"><div id="createBox">
+<label>Mode de jeu</label><select id="mode"><option value="holdem">Texas Hold'em No-Limit</option><option value="omaha">Omaha Pot-Limit</option><option value="dealer">Choix du donneur</option></select>
+<label>Blindes</label><div style="display:flex;gap:6px"><input id="sb" type="number" value="100" step="100"><input id="bb" type="number" value="200" step="200"></div>
+<button onclick="create()">Créer une table</button></div><button id="joinBtn" class="alt" onclick="join()" style="display:none">Rejoindre la table</button><p id="err" style="color:#f66"></p></div>
+<div id="game"><div class="top"><b id="code"></b><span id="hostbar"><button onclick="openInvite()">📱 Inviter par SMS</button><button class="alt" onclick="copyLink()">🔗 Copier le lien</button><button class="alt" onclick="share()">Partager</button>
+<select id="mode2" style="width:auto" onchange="sock.emit('settings',{mode:this.value})"><option value="holdem">Hold'em</option><option value="omaha">Omaha PL</option><option value="dealer">Choix du donneur</option></select></span></div>
+<div class="tablewrap"><div class="felt"></div><div class="center"><div id="badge"></div><div id="board"></div><div class="pot" id="pot"></div><div id="res" style="font-size:13px"></div></div><div id="seats"></div></div>
+<div id="prompt"></div><div id="actions"></div><div id="log"></div></div>
+<div class="modal" id="inv"><div><h3>Inviter par SMS</h3><p style="font-size:13px">Le SMS part de <b>ton</b> téléphone, via ton appli Messages.</p>
+<input id="phone" type="tel" placeholder="+33 6 12 34 56 78 (optionnel)"><button onclick="sendSms()">Ouvrir Messages</button><button class="alt" onclick="inv.style.display='none'">Fermer</button></div></div>
+<script src="/socket.io/socket.io.js"></script><script>
+const $=id=>document.getElementById(id);let token=localStorage.pkTok||(localStorage.pkTok=Math.random().toString(36).slice(2)+Date.now());
+$('name').value=localStorage.pkName||'';const sock=io();let S=null,code=(location.pathname.match(/\/t\/(\w+)/)||[])[1];
+if(code){$('createBox').style.display='none';$('joinBtn').style.display='block';if(localStorage['pk_'+code]&&localStorage.pkName)join();}
+const link=()=>location.origin+'/t/'+S.code;const msg=()=>"Viens jouer au poker avec moi ! Table "+S.code+" (jetons virtuels) : "+link();
+function nm(){const n=$('name').value.trim();if(!n){$('err').textContent='Choisis un pseudo';return null;}localStorage.pkName=n;return n;}
+function create(){const n=nm();if(!n)return;sock.emit('create',{name:n,mode:$('mode').value,sb:$('sb').value,bb:$('bb').value,token},r=>{code=r.code;history.replaceState(0,'','/t/'+code);join();});}
+function join(){const n=nm();if(!n)return;sock.emit('join',{code,name:n,token},r=>{if(r.error){$('err').textContent=r.error;return;}localStorage['pk_'+code]=1;$('lobby').style.display='none';$('game').style.display='block';});}
+sock.on('connect',()=>{if(code&&$('game').style.display==='block')sock.emit('join',{code,name:localStorage.pkName,token},()=>{});});
+function openInvite(){$('inv').style.display='flex';}
+function sendSms(){const p=$('phone').value.replace(/[^\d+]/g,'');location.href='sms:'+p+(/iPhone|iPad|Mac/.test(navigator.userAgent)?'&':'?')+'body='+encodeURIComponent(msg());}
+function copyLink(){navigator.clipboard?navigator.clipboard.writeText(link()).then(()=>alert('Lien copié !')):prompt('Copie ce lien :',link());}
+function share(){navigator.share?navigator.share({title:'Table de poker',text:msg(),url:link()}).catch(()=>{}):copyLink();}
+const SY={s:'♠',h:'♥',d:'♦',c:'♣'};const card=c=>c==='??'?'<span class="card back"></span>':`<span class="card ${'hd'.includes(c[1])?'r':''}">${c[0]==='T'?'10':c[0]}<small>${SY[c[1]]}</small></span>`;
+const DEN=[1500,200,100];function chips(a){if(!a)return'';let r=a,h='';for(const d of DEN){let n=Math.floor(r/d);r-=n*d;if(n)h+='<span class="col">'+'<span class="ch c'+d+'"></span>'.repeat(Math.min(n,8))+'</span>';}return '<span class="stk" title="'+a+'">'+h+'</span>';}
+const fmt=a=>a.toLocaleString('fr');let build=0;
+function addChip(d){const sl=$('slider');build=Math.min(+sl.max,Math.max(+sl.min,(build||0)+d));if(build<+sl.min)build=+sl.min;sl.value=build;sl.oninput();}
+const VN={holdem:"Texas Hold'em",omaha:'Omaha Pot-Limit'};
+sock.on('state',s=>{S=s;render();});
+function render(){const s=S,me=s.me;$('code').textContent='Table '+s.code+' · '+s.sb+'/'+s.bb;$('hostbar').style.display=s.host?'inline':'none';$('mode2').value=s.mode;
+ $('badge').innerHTML=s.stage==='choosing'?'<span class="badge">'+s.seats[s.chooser].name+' choisit la variante…</span>':(s.stage!=='waiting'?'<span class="badge">'+VN[s.variant]+(s.mode==='dealer'?' · choix du donneur':'')+'</span>':'<span class="badge">'+(s.mode==='dealer'?'Choix du donneur':VN[s.mode])+'</span>');
+ $('board').innerHTML=s.board.map(card).join('');$('pot').innerHTML=chips(s.pot)+' Pot : '+fmt(s.pot);
+ $('res').innerHTML=s.stage==='showdown'&&s.results?s.results.map(r=>`🏆 ${r.name} +${r.amount.toLocaleString('fr')}${r.hand?' ('+r.hand+')':''}`).join('<br>'):'';
+ const n=s.seats.length,off=me>=0?me:0;$('seats').innerHTML=s.seats.map((p,i)=>{if(!p)return'';const k=(i-off+n)%n,a=Math.PI/2+k*2*Math.PI/n,x=50+44*Math.cos(a),y=50+42*Math.sin(a);
+  return `<div class="seat ${i===s.toAct?'turn':''} ${p.folded?'fold':''} ${p.connected?'':'off'} ${i===me?'':'sm'}" style="left:${x}%;top:${y}%"><div>${p.hole.map(card).join('')}</div>
+  <div class="box">${i===s.button?'<span class="dealer">D</span> ':''}<b>${p.name}</b>${p.connected?'':' 📴'}<br>${chips(p.chips)} ${fmt(p.chips)}${p.rebuys?'<br><span class="rb">Recaves : '+p.rebuys+'</span>':''}${p.allin?' <b>TAPIS</b>':''}${p.handName?'<br><i>'+p.handName+'</i>':''}</div>${p.bet?`<div class="bet">${chips(p.bet)} ${fmt(p.bet)}</div>`:''}</div>`;}).join('');
+ let pr='';if(s.stage==='choosing'){if(s.chooser===me)pr=`<b>Hold'em ou Omaha ?</b> <span id="cd"></span><br><button onclick="sock.emit('choose','holdem')">Hold'em</button><button onclick="sock.emit('choose','omaha')">Omaha PL</button>`;else pr=s.seats[s.chooser].name+' choisit la variante… <span id="cd"></span>';}
+ else if(s.stage==='waiting'||s.stage==='showdown'){pr=(s.host||s.stage==='showdown')?`<button onclick="sock.emit('start')">${s.stage==='waiting'?'Lancer la partie':'Main suivante'}</button>`:'En attente de l’hôte…';if(s.seats.filter(x=>x).length<2)pr='En attente d’autres joueurs… Invite tes amis !';}
+ if(me>=0&&s.seats[me].chips===0&&!(s.seats[me].inHand&&!['waiting','showdown','choosing'].includes(s.stage)))pr+=` <button class="alt" onclick="sock.emit('rebuy')">Se recaver (+1 000)</button>`;
+ if(s.spectator)pr='<b>Table complète</b> — tu regardes en spectateur.';$('prompt').innerHTML=pr;
+ const L=s.limits;if(L){const b=L.toCall>0;$('actions').innerHTML=`<button class="alt" onclick="act('fold')">Se coucher</button>`+(b?`<button onclick="act('call')">Suivre ${L.toCall}</button>`:`<button onclick="act('check')">Parole</button>`)+
+  (L.canRaise?`<div style="width:100%;display:flex;gap:6px;justify-content:center">${DEN.map(d=>`<button class="cbtn c${d}" onclick="addChip(${d})">${d===1500?'1 500':d}</button>`).join('')}<button class="alt" style="width:auto" onclick="build=0;addChip(0)">↺</button></div><button onclick="act('raise',+$('slider').value)" id="rb">Relancer ${L.minTo}</button><input type="range" id="slider" min="${L.minTo}" max="${L.maxTo}" step="100" value="${L.minTo}" oninput="$('rb').textContent=(this.value==${L.maxTo}?'${s.variant==='omaha'?'Pot':'Tapis'} ':'Relancer ')+this.value">`:'');}else $('actions').innerHTML='';
+ if(!L)build=0;else build=+$('slider')?.value||0;$('log').innerHTML=s.log.slice().reverse().join('<br>');}
+function act(a,v){sock.emit('act',{action:a,amount:v});}
+setInterval(()=>{const e=$('cd');if(e&&S)e.textContent='('+Math.max(0,Math.ceil((S.choiceDeadline-Date.now())/1000))+' s)';},500);
+</script></body></html>
