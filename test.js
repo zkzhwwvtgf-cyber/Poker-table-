@@ -30,3 +30,6 @@ a.equal(T.chooseVariant(T.seats[(T.chooser+1)%3].id,'omaha'),false);T.chooseVari
 while(T.stage!=='showdown'){const i=T.toAct;T.act(T.seats[i].id,'fold');}
 const b1=T.button;T.startHand();a.equal(T.stage,'choosing');a.notEqual(T.chooser,b1);
 setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.variant,'omaha','délai -> variante précédente');console.log('✓ délai du donneur -> variante précédente');console.log('Tous les tests OK');},120);
+{const T=sim('holdem');T.setMode('omaha');a.equal(T.mode,'omaha');T.startHand();a.equal(T.variant,'omaha');a.equal(T.hand.pl[0].hole.length,4);
+ T.setMode('dealer');a.equal(T.mode,'omaha');a.equal(T.pendingMode,'dealer');a(T.log.at(-1).includes('à partir de la prochaine main'));
+ while(T.stage!=='showdown')T.act(T.seats[T.toAct].id,'fold');T.startHand();a.equal(T.mode,'dealer');a.equal(T.stage,'choosing');console.log('✓ changement de variante (immédiat / prochaine main)');}

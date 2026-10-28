@@ -45,9 +45,13 @@ class Table{
   seatOf(id){return this.seats.findIndex(s=>s&&s.id===id);}
   next(i,pred){const N=this.seats.length;for(let k=1;k<=N;k++){const j=(i+k)%N;if(this.seats[j]&&pred(this.seats[j],j))return j;}return -1;}
   ready(){return this.seats.filter(s=>s&&s.chips>0&&!s.sitOut);}
+  setMode(m){if(!['holdem','omaha','dealer'].includes(m))return false;const NM={holdem:"Hold'em",omaha:'Omaha',dealer:'Choix du donneur'};
+    if(this.stage==='waiting'||this.stage==='showdown'){this.mode=m;this.pendingMode=null;if(m!=='dealer')this.variant=m;this.log.push('Variante : '+NM[m]+(this.stage==='waiting'?'':' à partir de la prochaine main'));}
+    else{this.pendingMode=m;this.log.push('Variante : '+NM[m]+' à partir de la prochaine main');}return true;}
   startHand(){
     if(this.stage!=='waiting'&&this.stage!=='showdown')return false;
     if(this.ready().length<2)return false;
+    if(this.pendingMode){this.mode=this.pendingMode;this.pendingMode=null;}
     this.button=this.next(this.button<0?this.seats.length-1:this.button,s=>s.chips>0&&!s.sitOut);
     if(this.mode==='dealer'){this.stage='choosing';this.chooser=this.button;this.hand=null;
       clearTimeout(this.timer);this.choiceDeadline=Date.now()+this.choiceTimeout;
@@ -111,10 +115,10 @@ class Table{
   rebuy(id){const i=this.seatOf(id);if(i<0||this.seats[i].chips>0)return false;if(this.hand&&this.hand.pl[i]&&!['waiting','showdown','choosing'].includes(this.stage))return false;
     this.seats[i].chips+=CONFIG.REBUY;this.seats[i].rebuys++;this.log.push(this.seats[i].name+' se recave (+1 000)');return true;}
   toJSON(){const seats=this.seats.map((s,i)=>s&&{...s,connected:false,chips:s.chips+(this.hand&&this.hand.pl[i]&&this.stage!=='showdown'?this.hand.pl[i].total:0)});
-    return {seats,sb:this.sb,bb:this.bb,mode:this.mode,variant:this.variant,button:this.button,log:this.log.slice(-20)};}
-  static fromJSON(d){const t=new Table(d);Object.assign(t,{seats:d.seats,variant:d.variant,button:d.button,log:d.log||[]});return t;}
+    return {seats,pendingMode:this.pendingMode,sb:this.sb,bb:this.bb,mode:this.mode,variant:this.variant,button:this.button,log:this.log.slice(-20)};}
+  static fromJSON(d){const t=new Table(d);Object.assign(t,{pendingMode:d.pendingMode||null,seats:d.seats,variant:d.variant,button:d.button,log:d.log||[]});return t;}
   view(id){const me=this.seatOf(id),h=this.hand;
-    return {stage:this.stage,mode:this.mode,variant:this.variant,sb:this.sb,bb:this.bb,button:this.button,toAct:this.toAct,me,
+    return {stage:this.stage,mode:this.mode,pendingMode:this.pendingMode||null,variant:this.variant,sb:this.sb,bb:this.bb,button:this.button,toAct:this.toAct,me,
       chooser:this.stage==='choosing'?this.chooser:-1,choiceDeadline:this.choiceDeadline,log:this.log.slice(-8),
       board:h?h.board:[],pot:h?this.potTotal():0,currentBet:h?h.currentBet:0,results:h?h.results:null,
       limits:(h&&me===this.toAct&&me>=0)?this.limits(me):null,
