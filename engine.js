@@ -56,9 +56,9 @@ class Table{
   seatOf(id){return this.seats.findIndex(s=>s&&s.id===id);}
   next(i,pred){const N=this.seats.length;for(let k=1;k<=N;k++){const j=(i+k)%N;if(this.seats[j]&&pred(this.seats[j],j))return j;}return -1;}
   ready(){return this.seats.filter(s=>s&&s.chips>0&&!s.sitOut);}
-  setMode(m){if(!['holdem','omaha','omahanl','dealer'].includes(m))return false;const NM={holdem:"Hold'em",omaha:'Omaha PL',omahanl:'Omaha NL',dealer:'Choix du donneur'};
-    if(this.stage==='waiting'||this.stage==='showdown'){this.mode=m;this.pendingMode=null;if(m!=='dealer')this.variant=m;this.log.push('Variante : '+NM[m]+(this.stage==='waiting'?'':' à partir de la prochaine main'));}
-    else{this.pendingMode=m;this.log.push('Variante : '+NM[m]+' à partir de la prochaine main');}return true;}
+  setMode(m){if(!['holdem','omaha','omahanl','dealer'].includes(m))return false;const NM={holdem:"Hold'em",omaha:'Omaha',omahanl:'Omaha NL',dealer:'Choix du donneur'};
+    if(this.stage==='waiting'||this.stage==='showdown'){this.mode=m;this.pendingMode=null;if(m!=='dealer')this.variant=m;this.log.push((this.stage==='waiting'?'Variante : ':'Prochaine main : ')+NM[m]);}
+    else{this.pendingMode=m;this.log.push('Prochaine main : '+NM[m]);}return true;}
   startHand(){
     if(this.stage!=='waiting'&&this.stage!=='showdown')return false;
     if(this.ready().length<2)return false;

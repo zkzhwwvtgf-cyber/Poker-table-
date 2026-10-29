@@ -131,6 +131,13 @@ h3{font-family:Bungee;margin:0 0 10px;color:#ffe27a}
  #bar{bottom:var(--vvb,0px)}
 }
 @media (display-mode:standalone){#game{padding-top:calc(env(safe-area-inset-top) + 6px)}#lobby{padding-top:calc(env(safe-area-inset-top) + 36px)}}
+/* choix du jeu */
+.vseg{display:inline-flex;padding:3px;gap:3px;border-radius:999px;background:#000b;border:1px solid #ffc83d88;box-shadow:0 0 14px #ffc83d33}
+.vseg button{margin:0;width:auto;min-height:44px;min-width:92px;padding:0 16px;border-radius:999px;font:900 14px Inter;letter-spacing:.3px;background:transparent;color:#ffe9b0;box-shadow:none;border:0}
+.vseg button.on{background:linear-gradient(90deg,#ffc83d,#ff9a3d);color:#2a0c00;box-shadow:0 2px 8px #0008}
+.vseg.lob{display:flex;margin:4px 0 10px}.vseg.lob button{flex:1}
+.vpend{display:block;font-size:11px;color:#ffe27a;font-weight:800;margin-top:2px}
+@media (orientation:landscape) and (max-height:600px){.vseg button{min-width:78px;padding:0 10px;font-size:13px}.vpend{font-size:10px}}
 /* 25 vocal */
 #vbox{position:absolute;right:4px;top:48px;z-index:6;display:flex;flex-direction:column;gap:6px}#vbox .tbtn{position:static}#micBtn.von{background:#1d6b3aee;border-color:#7dff6a}#micBtn.vmut{background:#6b1d2aee;border-color:#ff6a7f}#vLeave{display:none}
 .av.spk{box-shadow:0 0 0 3px #7dff6a,0 0 16px #7dff6a!important}html:not(.rm) .av.spk{transition:box-shadow .1s}
@@ -237,7 +244,7 @@ html.rm .fly,html.rm .bub{display:none}
 <div id="lobby"><div class="brand"><a class="tlink" href="https://poker-stephane.onrender.com" target="_self" aria-label="Steph&#39;s Table — accueil"><img class="hlogo" src="/logo-320.webp?v=3" alt="Steph&#39;s Table" width="320" height="320" fetchpriority="high" onerror="this.onerror=null;this.src='/logo.png'"></a><div class="wordmark rainbow" id="wm"></div><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div><div class="tagline">♠ ♥ Poker entre amis ♣ ♦</div>
 <div class="panel"><p style="text-align:center;margin:0 0 6px;color:#ffd9f0;font-size:14px">Jetons virtuels · 5 000 par joueur · 6 places</p>
 <label>Ton pseudo</label><input id="name" placeholder="ex. Stéphane" maxlength="14"><label>Ton avatar</label><div id="avgrid" class="avgrid"></div><label class="phbtn">📷 Ma photo<input type="file" accept="image/*" id="phin" hidden onchange="pickPhoto(this)"></label><div id="createBox">
-<label>Variante</label><select id="mode"><option value="holdem">Texas Hold'em No-Limit</option><option value="omaha">Omaha Pot-Limit</option><option value="omahanl">Omaha No-Limit</option><option value="dealer">Choix du donneur</option></select>
+<label>Jeu</label><input type="hidden" id="mode" value="holdem"><div class="vseg lob" id="lobseg"><button type="button" class="on" onclick="lobMode('holdem')">Hold'em</button><button type="button" onclick="lobMode('omaha')">Omaha</button></div>
 <label>Blindes</label><div class="row"><input id="sb" type="number" value="100" step="100"><input id="bb" type="number" value="200" step="200"></div>
 <button class="pink" onclick="create()">Créer la table 🎉</button></div><button id="joinBtn" class="pink" onclick="join()" style="display:none">Rejoindre la table 🎉</button><p id="err" style="color:#ff8aa0;text-align:center;font-weight:700"></p></div><div class="loc">Neuilly-sur-Seine<br><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div></div>
 <div id="game"><div class="top"><div class="brand"><a class="tlink" href="https://poker-stephane.onrender.com" target="_self" aria-label="Steph&#39;s Table — accueil"><img class="hlogo" src="/logo-128.webp?v=3" alt="Steph&#39;s Table" width="128" height="128" loading="lazy" onerror="this.onerror=null;this.src='/logo.png'"></a><div><div class="wordmark rainbow" id="wm2"></div><div id="code"></div></div><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div>
@@ -246,7 +253,7 @@ html.rm .fly,html.rm .bub{display:none}
 <div id="bar"><div id="turnban">À toi ! 🎯</div><div id="prompt"></div><div id="actions"></div><div id="log"></div></div></div>
 <div class="modal" id="menu" onclick="if(event.target===this)this.style.display='none'"><div class="panel menu"><h3>Menu de la table</h3>
 <div id="hostbar"><button onclick="closeMenu();openInvite()">📱 Inviter par SMS</button><button class="alt" onclick="closeMenu();copyLink()">🔗 Copier le lien</button><button class="alt" onclick="closeMenu();share()">📤 Partager</button>
-<label>Variante</label><select id="mode2" onchange="setMode(this.value)"><option value="holdem">Hold'em</option><option value="omaha">Omaha PL</option><option value="omahanl">Omaha NL</option><option value="dealer">Choix du donneur</option></select></div>
+</div>
 <div id="guestbar"><button class="alt" onclick="closeMenu();copyLink()">🔗 Copier le lien</button><button class="alt" onclick="closeMenu();share()">📤 Partager</button></div>
 <button class="cyan" onclick="closeMenu();openBilan()">📊 Bilan</button>
 <button type="button" id="vMenu" class="cyan" onclick="closeMenu();VOICE.on?vLeave():vJoin()">🎤 Rejoindre le vocal</button><label class="rmt"><input type="checkbox" id="mutebox" onchange="setMute(this.checked)"> 🔇 Son coupé</label><label class="rmt"><input type="checkbox" id="rmbox" onchange="setRM(this.checked)"> Animations réduites</label><div id="dangerbar" class="danger"><button class="red" onclick="if(confirm('Réinitialiser la table ? Toutes les piles reviennent à 5 000 et les compteurs à zéro.')){closeMenu();sock.emit('reset')}">♻ Réinitialiser la table</button></div>
@@ -271,8 +278,13 @@ function join(){const n=nm();if(!n)return;sock.emit('join',{code,name:n,token,..
 sock.on('connect',()=>{if(VOICE.on){Object.keys(VOICE.pcs).forEach(closePeer);setTimeout(()=>sock.emit('vjoin'),400);}if(joined)sock.emit('join',{code,name:localStorage.pkName,token,...avPay()},r=>{if(r&&r.error){toast(r.error);setTimeout(()=>location.reload(),1500);}});});
 sock.on('toast',t=>toast(t));
 let tt;function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),3500);}
-const MN={holdem:"Hold'em",omaha:'Omaha PL',omahanl:'Omaha NL',dealer:'Choix du donneur'};
-function setMode(v){sock.emit('settings',{mode:v});const busy=S&&!['waiting'].includes(S.stage);toast('Variante : '+MN[v]+(busy?' à partir de la prochaine main':''));}
+const MN={holdem:"Hold'em",omaha:'Omaha',omahanl:'Omaha NL',dealer:'Choix du donneur'};
+function setMode(v){sock.emit('settings',{mode:v});const busy=S&&!['waiting'].includes(S.stage);toast((busy?'Prochaine main : ':'Jeu : ')+MN[v]);}
+function lobMode(v){$('mode').value=v;[...$('lobseg').children].forEach((b,i)=>b.classList.toggle('on',(i?'omaha':'holdem')===v));}
+const uiM=m=>m==='omaha'||m==='omahanl'?'omaha':'holdem';
+function gameHTML(s){const cur=uiM(s.pendingMode||s.mode),pend=s.pendingMode&&s.stage!=='waiting'?'<small class="vpend">dès la prochaine main</small>':'';
+ if(!s.host)return '<span class="badge">'+(s.stage==='waiting'?MN[uiM(s.mode)]:VN[s.variant])+(s.pendingMode&&s.stage!=='waiting'?' · prochaine : '+MN[uiM(s.pendingMode)]:'')+'</span>';
+ return `<div class="vseg" role="radiogroup" aria-label="Jeu">${['holdem','omaha'].map(m=>`<button type="button" role="radio" aria-checked="${cur===m}" class="${cur===m?'on':''}" onclick="${cur===m?'':`setMode('${m}')`}">${MN[m]}</button>`).join('')}</div>${pend}`;}
 function closeMenu(){$('menu').style.display='none';}
 function openInvite(){$('inv').style.display='flex';}
 async function shareInvite(){if(!S||!S.code)return;const d={title:"Steph's Table",text:"Viens jouer au poker à ma table ! 🃏",url:link()};
@@ -294,7 +306,7 @@ const SY={s:'♠\uFE0E',h:'♥\uFE0E',d:'♦\uFE0E',c:'♣\uFE0E'};let seen=new 
 function card(c,key,hl){if(c==='??'){const k='b'+key;const n=!seen.has(k);nowSeen.add(k);return `<span class="card back ${n?'deal':''}"></span>`;}
  const k=key+c,n=!seen.has(k);nowSeen.add(k);const r=({T:'10',J:'V',Q:'D',K:'R'})[c[0]]||c[0],s=SY[c[1]];
  return `<span class="card ${c[1]==='h'||c[1]==='d'?'r':'k'} ${hl===true?'hl':(hl||'')} ${n?(seen.has('b'+key)?'flip':'deal'):''}"><span class="rk">${r}</span><span class="st">${s}</span></span>`;}
-const VN={holdem:"Texas Hold'em",omaha:'Omaha Pot-Limit',omahanl:'Omaha No-Limit'};const AV=['#ff3ea5','#ffb020','#22c7ff','#5fdc4a','#a06bff','#ff6a3d'];
+const VN={holdem:"Texas Hold'em",omaha:'Omaha',omahanl:'Omaha No-Limit'};const AV=['#ff3ea5','#ffb020','#22c7ff','#5fdc4a','#a06bff','#ff6a3d'];
 const DEN=[1000,500,200,100];function chips(a){if(!a)return'';let r=a,h='';for(const d of DEN){let n=Math.floor(r/d);r-=n*d;if(n){n=Math.min(n,8);let c='';for(let i=0;i<n;i++)c+=`<span class="ch c${d}" style="bottom:${i*4}px"></span>`;h+=`<span class="col" style="height:${12+n*4}px">${c}</span>`;}}return '<span class="stk">'+h+'</span>';}
 let build=0,lastPending=null;
 function addChip(d){const sl=$('slider');build=Math.min(+sl.max,Math.max(+sl.min,(build||0)+d));sl.value=build;sl.oninput();}
@@ -302,7 +314,7 @@ const AL={fold:'Couché',check:'Parole',call:'Suit',raise:'Relance',allin:'Tapis
 function center(el){const r=el.getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2];}
 function fly(from,to,n=4){for(let i=0;i<n;i++){const c=document.createElement('div');c.className='fly';c.style.left=(from[0]-10)+'px';c.style.top=(from[1]-10)+'px';document.body.appendChild(c);
  setTimeout(()=>{c.style.transform=`translate(${to[0]-from[0]+(Math.random()*16-8)}px,${to[1]-from[1]+(Math.random()*10-5)}px)`;},30+i*70);setTimeout(()=>{c.style.opacity=0},700+i*70);setTimeout(()=>c.remove(),1500+i*70);}}
-sock.on('state',s=>{requestAnimationFrame(()=>{const b=document.getElementById('bar');if(b)document.documentElement.style.setProperty('--barh',b.offsetHeight+'px');});if(S&&s.pendingMode&&s.pendingMode!==lastPending)toast('Variante : '+MN[s.pendingMode]+' à partir de la prochaine main');lastPending=s.pendingMode;
+sock.on('state',s=>{requestAnimationFrame(()=>{const b=document.getElementById('bar');if(b)document.documentElement.style.setProperty('--barh',b.offsetHeight+'px');});if(S&&s.pendingMode&&s.pendingMode!==lastPending)toast('Prochaine main : '+MN[uiM(s.pendingMode)]);lastPending=s.pendingMode;
  if(S&&S.mode!==s.mode&&!s.pendingMode)toast('Variante : '+MN[s.mode]);P=S;S=s;runPre(s);render();effects();if($('bil').style.display==='flex')$('bilbody').innerHTML=bilanHTML();});
 function effects(){if(!P){fx0();return;}const potEl=$('pot');fx0();
  {const nh=S.stage==='preflop'&&['waiting','showdown','choosing'].includes(P.stage);if(nh)snd('deal');else if(S.board.length>P.board.length)snd('flip');
@@ -316,9 +328,9 @@ function effects(){if(!P){fx0();return;}const potEl=$('pot');fx0();
  if(S.stage!==P.stage&&P.pot)setTimeout(()=>potEl.classList.add('bump'),500),setTimeout(()=>potEl.classList.remove('bump'),1100);
  // pot -> gagnant
  if(S.stage==='showdown'&&P.stage!=='showdown'&&S.results)S.results.forEach(r=>{const el=document.querySelector(`[data-seat="${r.seat}"]`);if(el)fly(center(potEl),center(el),8);if(r.seat===S.me)toast('🏆 Tu gagnes '+fmt(r.amount)+' !');});}
-function render(){const s=S,me=s.me;nowSeen=new Set();$('code').textContent='Table '+s.code+' · blindes '+s.sb+'/'+s.bb;$('hostbar').style.display=s.host?'block':'none';$('guestbar').style.display=s.host?'none':'block';$('dangerbar').style.display=s.host?'block':'none';$('mode2').value=s.pendingMode||s.mode;
+function render(){const s=S,me=s.me;nowSeen=new Set();$('code').textContent='Table '+s.code+' · blindes '+s.sb+'/'+s.bb;$('hostbar').style.display=s.host?'block':'none';$('guestbar').style.display=s.host?'none':'block';$('dangerbar').style.display=s.host?'block':'none';
  const pend=s.pendingMode?' · ensuite : '+MN[s.pendingMode]:'';
- $('badge').innerHTML=s.stage==='choosing'?'<span class="badge wait">'+s.seats[s.chooser].name+' choisit la variante…</span>':(s.stage!=='waiting'?'<span class="badge">'+VN[s.variant]+(s.mode==='dealer'?' · choix du donneur':'')+pend+'</span>':'<span class="badge wait">'+(s.mode==='dealer'?'Choix du donneur':VN[s.mode])+pend+'</span>');
+ $('badge').innerHTML=s.stage==='choosing'?'<span class="badge wait">'+s.seats[s.chooser].name+' choisit la variante…</span>':gameHTML(s);
  const W=new Set(s.stage==='showdown'&&s.results?s.results.flatMap(r=>r.cards||[]):[]);const wc=c=>W.size?(W.has(c)?'hl':'dim'):false;
  $('board').innerHTML=s.board.map((c,i)=>card(c,'bd'+i,wc(c))).join('');$('pot').innerHTML=s.pot&&s.stage!=='showdown'?chips(s.pot)+' Pot : '+fmt(s.pot):'Pot : 0';
  const winners=new Set(s.stage==='showdown'&&s.results?s.results.map(r=>r.seat):[]);

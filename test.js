@@ -39,7 +39,7 @@ while(T.stage!=='showdown'){const i=T.toAct;T.act(T.seats[i].id,'fold');}
 const b1=T.button;T.startHand();a.equal(T.stage,'choosing');a.notEqual(T.chooser,b1);
 setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.variant,'omaha','délai -> variante précédente');console.log('✓ délai du donneur -> variante précédente');console.log('Tous les tests OK');},120);
 {const T=sim('holdem');T.setMode('omaha');a.equal(T.mode,'omaha');T.startHand();a.equal(T.variant,'omaha');a.equal(T.hand.pl[0].hole.length,4);
- T.setMode('dealer');a.equal(T.mode,'omaha');a.equal(T.pendingMode,'dealer');a(T.log.at(-1).includes('à partir de la prochaine main'));
+ T.setMode('dealer');a.equal(T.mode,'omaha');a.equal(T.pendingMode,'dealer');a(T.log.at(-1).startsWith('Prochaine main : '));
  while(T.stage!=='showdown')T.act(T.seats[T.toAct].id,'fold');T.startHand();a.equal(T.mode,'dealer');a.equal(T.stage,'choosing');console.log('✓ changement de variante (immédiat / prochaine main)');}
 {const T=sim('holdem');T.seats[1].chips=0;T.rebuy('b',3000);a.equal(T.view('a').seats[1].engaged,8000);a.equal(T.view('a').seats[1].bilan,-5000);
  const sum=()=>T.view('a').seats.filter(x=>x).reduce((s,x)=>s+x.bilan,0);a.equal(sum(),-5000+0);// pile 3000 sur 8000 engagés, autres 0
@@ -106,6 +106,8 @@ function serverTest(){const {spawn}=require('child_process'),{io}=require('socke
    const Cx=mk();await w(200);await new Promise(r=>Cx.emit('join',{code,name:'Q',token:'tq'},r));Cx.emit('vsig',{to:B2.id,data:{ice:1}});await w(150);a.equal(got.length,1,'pas en vocal');Cx.close();
    for(let k=0;k<80;k++)A.emit('vsig',{to:B2.id,data:{ice:{k}}});await w(400);a(got.length>=50&&got.length<=61,'débit '+got.length);
    A.emit('vleave');await w(150);a.equal(vl.length,1);O.close();console.log('✓ serveur : vocal — relais même table, taille et débit limités');}
+  {const M=mk();await w(200);const c3=await new Promise(r=>M.emit('create',{name:'M',mode:'omahanl',token:'tm'},x=>r(x.code)));await new Promise(r=>M.emit('join',{code:c3,name:'M',token:'tm'},r));await w(100);a.equal(M.st.mode,'omaha');
+   M.emit('settings',{mode:'dealer'});await w(100);a.equal(M.st.mode,'holdem');M.close();console.log("✓ serveur : jeux proposés Hold'em / Omaha (Omaha NL -> Omaha, donneur -> Hold'em)");}
   // plus personne connecté : la table survit pendant la grâce, puis disparaît
   A.close();B2.close();C.close();await w(300);const D=mk();await w(200);const r1=await new Promise(r=>D.emit('join',{code,name:'A',token:'ta'},r));a(r1.ok,'table supprimée pendant la grâce');await w(150);
   a(D.st.seats.filter(x=>x).length>=1);D.close();await w(1500);const E=mk();await w(200);const r2=await new Promise(r=>E.emit('join',{code,name:'Z',token:'tz'},r));a.equal(r2.error,'Table introuvable');E.close();

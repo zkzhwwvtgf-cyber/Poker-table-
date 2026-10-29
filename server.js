@@ -14,7 +14,7 @@ const srv=http.createServer(app),io=new Server(srv,{cors:{origin:'*'}});const ro
 const code=()=>crypto.randomBytes(4).toString('hex').slice(0,6).toUpperCase();
 function push(r){for(const [sid,tok] of Object.entries(r.sockets)){const s=io.sockets.sockets.get(sid);if(s)s.emit('state',{...r.t.view(tok),code:r.code,host:r.host===tok});}}
 io.on('connection',sock=>{let room=null,tok=null;
-  sock.on('create',({name,mode,sb,bb,token},cb)=>{const c=code();const t=new Table({mode,sb:+sb||CONFIG.SB,bb:+bb||CONFIG.BB,awayDelay:AWAY});
+  sock.on('create',({name,mode,sb,bb,token},cb)=>{mode=uiMode(mode);const c=code();const t=new Table({mode,sb:+sb||CONFIG.SB,bb:+bb||CONFIG.BB,awayDelay:AWAY});
     const r=rooms[c]={code:c,t,host:token,sockets:{},grace:{}};t.onChange=()=>push(r);cb&&cb({code:c});});
   sock.on('join',({code:c,name,token,avatar,photo},cb)=>{const r=rooms[(c||'').toUpperCase()];if(!r)return cb&&cb({error:'Table introuvable'});
     room=r;tok=String(token||sock.id);r.toks=r.toks||{};if(token)r.toks[tok]=1;let i=r.t.seatOf(tok);const nm=String(name||'Joueur').slice(0,14);const av=cleanAv(avatar),ph=cleanPh(photo);
@@ -28,7 +28,7 @@ io.on('connection',sock=>{let room=null,tok=null;
   sock.on('start',g(()=>{if(room.host===tok||room.t.stage==='showdown')room.t.startHand();}));
   sock.on('choose',g(v=>room.t.chooseVariant(tok,v)));
   sock.on('act',g(({action,amount})=>room.t.act(tok,action,amount)));
-  sock.on('settings',g(({mode,sb,bb})=>{if(room.host!==tok)return;const t=room.t;if(mode)t.setMode(mode);if(!['waiting','showdown'].includes(t.stage))return;if(!sb&&!bb)return;if(+sb&&sb%100===0)t.sb=+sb;if(+bb&&bb%100===0)t.bb=+bb;t.log.push('Réglages : '+({holdem:"Hold'em",omaha:'Omaha PL',omahanl:'Omaha NL',dealer:'Choix du donneur'})[t.mode]+' '+t.sb+'/'+t.bb);}));
+  sock.on('settings',g(({mode,sb,bb})=>{if(room.host!==tok)return;const t=room.t;if(mode)t.setMode(uiMode(mode));if(!['waiting','showdown'].includes(t.stage))return;if(!sb&&!bb)return;if(+sb&&sb%100===0)t.sb=+sb;if(+bb&&bb%100===0)t.bb=+bb;t.log.push('Réglages : '+({holdem:"Hold'em",omaha:'Omaha PL',omahanl:'Omaha NL',dealer:'Choix du donneur'})[t.mode]+' '+t.sb+'/'+t.bb);}));
   sock.on('reset',g(()=>{if(room.host===tok){room.t.fullReset();io.to('r'+room.code).emit('toast','Table réinitialisée : tout le monde repart à 5 000');}}));
   // réactions rapides : liste fermée, 1 par seconde et par joueur (côté serveur)
   sock.on('react',e=>{if(!room||!REACT.includes(e))return;const now=Date.now();room.rx=room.rx||{};if(now-(room.rx[tok]||0)<1000)return;room.rx[tok]=now;
@@ -47,6 +47,8 @@ io.on('connection',sock=>{let room=null,tok=null;
         if(r.host===tok){const n=r.t.seats.find(x=>x&&x.connected)||r.t.seats.find(x=>x);if(n){r.host=n.id;r.t.log.push(n.name+' devient hôte');}}cleanup(r);},GRACE);}
     cleanup(r);});
 });
+// choix proposés : Hold'em (NL) et Omaha (pot-limit) ; Omaha NL -> Omaha, choix du donneur -> Hold'em (moteur conservé)
+const uiMode=m=>m==='omaha'||m==='omahanl'?'omaha':'holdem';
 const REACT=['😂','😱','👏','🍀','🔥','😎'];
 const AVS=['🦊','🐼','🐯','🦁','🐸','🐵','🐙','🦄','🐺','🐻','🐨','🐷','😎','🤠','🥷','🧙','👑','🎩','💎','🔥','🍀','🎲','🃏','🚀'];
 function cleanAv(a){return AVS.includes(a)?a:null;}
