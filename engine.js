@@ -41,8 +41,17 @@ function sidePots(contribs){
 
 class Table{
   constructor(o={}){this.seats=Array(CONFIG.SEATS).fill(null);this.sb=o.sb||CONFIG.SB;this.bb=o.bb||CONFIG.BB;this.mode=o.mode||'holdem';
-    this.variant=isOmaha(this.mode)?this.mode:'holdem';this.button=-1;this.hand=null;this.stage='waiting';this.log=[];this.choiceTimeout=o.choiceTimeout||20000;this.onChange=()=>{};this.timer=null;}
+    this.variant=isOmaha(this.mode)?this.mode:'holdem';this.button=-1;this.hand=null;this.stage='waiting';this.log=[];this.choiceTimeout=o.choiceTimeout||20000;this.onChange=()=>{};this.timer=null;this.awayDelay=o.awayDelay||30000;this.awayT=null;this.awayKey=null;}
   addPlayer(id,name,chips=CONFIG.STACK){let i=this.seats.findIndex(s=>!s);if(i<0)return -1;this.seats[i]={id,name,chips,connected:true,sitOut:false,rebuys:0,rebuyTotal:0,engaged:chips};return i;}
+  setConnected(id,on){const i=this.seatOf(id);if(i<0)return false;const s=this.seats[i];if(s.connected===on)return true;s.connected=on;
+    this.log.push(s.name+(on?' est de retour':' déconnecté'));this.scheduleAway();return true;}
+  // joueur déconnecté à qui c'est le tour : parole si possible, sinon couché, après le délai du tour
+  scheduleAway(){const h=this.hand,i=this.toAct,s=this.seats[i];
+    const betting=h&&['preflop','flop','turn','river'].includes(this.stage);
+    if(!betting||i<0||!s||s.connected){clearTimeout(this.awayT);this.awayT=null;this.awayKey=null;return;}
+    const key=i+':'+h.turnStart;if(this.awayKey===key)return;clearTimeout(this.awayT);this.awayKey=key;
+    this.awayT=setTimeout(()=>{this.awayT=null;this.awayKey=null;if(this.toAct!==i||!this.seats[i]||this.seats[i].connected||!this.hand)return;
+      const L=this.limits(i);this.act(this.seats[i].id,L.toCall>0?'fold':'check');this.onChange();},this.awayDelay);}
   seatOf(id){return this.seats.findIndex(s=>s&&s.id===id);}
   next(i,pred){const N=this.seats.length;for(let k=1;k<=N;k++){const j=(i+k)%N;if(this.seats[j]&&pred(this.seats[j],j))return j;}return -1;}
   ready(){return this.seats.filter(s=>s&&s.chips>0&&!s.sitOut);}
@@ -71,7 +80,7 @@ class Table{
     const ids=Object.keys(pl).map(Number);
     let sbI,bbI;if(ids.length===2){sbI=this.button;bbI=this.next(sbI,(s,j)=>pl[j]);}else{sbI=this.next(this.button,(s,j)=>pl[j]);bbI=this.next(sbI,(s,j)=>pl[j]);}
     this.post(sbI,this.sb);this.post(bbI,this.bb);this.hand.currentBet=this.bb;this.hand.sbI=sbI;this.hand.bbI=bbI;
-    this.toAct=this.next(bbI,(s,j)=>pl[j]&&!pl[j].allin);this.hand.turnStart=Date.now();this.checkRound();
+    this.toAct=this.next(bbI,(s,j)=>pl[j]&&!pl[j].allin);this.hand.turnStart=Date.now();this.checkRound();this.scheduleAway();
   }
   post(i,a){const p=this.hand.pl[i],s=this.seats[i];a=Math.min(a,s.chips);s.chips-=a;p.bet+=a;p.total+=a;if(!s.chips)p.allin=true;}
   potTotal(){return Object.values(this.hand.pl).reduce((x,p)=>x+p.total,0);}
@@ -90,8 +99,8 @@ class Table{
       if(to>h.currentBet){h.currentBet=to;for(const q of Object.values(h.pl))q.acted=false;}
       this.post(i,to-p.bet);this.log.push(nm+(p.allin?' tapis à ':' relance à ')+to);}
     else return false;
-    p.acted=true;p.last={type:p.allin?'allin':action,amount:action==='call'||action==='raise'?p.bet:0};
-    this.toAct=this.next(i,(s2,j)=>h.pl[j]&&!h.pl[j].folded&&!h.pl[j].allin);h.turnStart=Date.now();this.checkRound();return true;}
+    this.lastAction=this.log[this.log.length-1];p.acted=true;p.last={type:p.allin?'allin':action,amount:action==='call'||action==='raise'?p.bet:0};
+    this.toAct=this.next(i,(s2,j)=>h.pl[j]&&!h.pl[j].folded&&!h.pl[j].allin);h.turnStart=Date.now();this.checkRound();this.scheduleAway();return true;}
   checkRound(){const h=this.hand,live=Object.entries(h.pl).filter(([,p])=>!p.folded);
     if(live.length===1)return this.finish();
     const canAct=live.filter(([,p])=>!p.allin);
@@ -112,7 +121,7 @@ class Table{
         const N=this.seats.length,U=CONFIG.UNIT;ws.sort((a,b)=>((a-this.button-1+N)%N)-((b-this.button-1+N)%N));const share=Math.floor(pot.amount/ws.length/U)*U;let odd=pot.amount-share*ws.length;
         for(const w of ws){const x=Math.min(odd,U);odd-=x;const a=share+x;this.seats[w].chips+=a;res.push({seat:w,amount:a,name:this.seats[w].name,hand:ev[w].name});this.log.push(this.seats[w].name+' gagne '+a+' ('+ev[w].name+')');}}
       h.shown=Object.fromEntries(live.map(j=>[j,{hole:h.pl[j].hole,name:ev[j].name}]));}
-    h.results=res;this.stage='showdown';this.toAct=-1;}
+    h.results=res;this.stage='showdown';this.toAct=-1;clearTimeout(this.awayT);this.awayKey=null;}
   resetStacks(){if(this.stage!=='waiting'&&this.stage!=='showdown'){this.pendingReset=true;this.log.push('Nouveau joueur : piles remises à 5 000 à la prochaine main');return;}
     this.pendingReset=false;for(const s of this.seats)if(s){s.chips=CONFIG.STACK;s.rebuys=0;s.rebuyTotal=0;s.engaged=CONFIG.STACK;}this.log.push('Nouveau joueur : toutes les piles remises à 5 000');}
   fullReset(){clearTimeout(this.timer);this.hand=null;this.stage='waiting';this.toAct=-1;this.pendingReset=false;
@@ -121,7 +130,7 @@ class Table{
     if(this.stage==='choosing'&&this.chooser===i){clearTimeout(this.timer);this.seats[i]=null;this.stage='waiting';this.log.push(nm+' quitte la table');return true;}
     if(active&&!h.pl[i].folded){h.pl[i].folded=true;h.pl[i].last={type:'fold'};}
     this.seats[i]=null;this.log.push(nm+' quitte la table');
-    if(active){if(this.toAct===i)this.toAct=this.next(i,(s2,j)=>h.pl[j]&&!h.pl[j].folded&&!h.pl[j].allin);h.turnStart=Date.now();this.checkRound();}
+    if(active){if(this.toAct===i)this.toAct=this.next(i,(s2,j)=>h.pl[j]&&!h.pl[j].folded&&!h.pl[j].allin);h.turnStart=Date.now();this.checkRound();this.scheduleAway();}
     return true;}
   rebuy(id,amount=CONFIG.REBUY){amount=+amount;if(!CONFIG.REBUY_OPTIONS.includes(amount))return false;const i=this.seatOf(id);if(i<0||this.seats[i].chips>0)return false;if(this.hand&&this.hand.pl[i]&&!['waiting','showdown','choosing'].includes(this.stage))return false;
     this.seats[i].chips+=amount;this.seats[i].rebuys++;this.seats[i].rebuyTotal=(this.seats[i].rebuyTotal||0)+amount;this.seats[i].engaged=(this.seats[i].engaged||CONFIG.STACK)+amount;this.log.push(this.seats[i].name+' se recave (+'+amount.toLocaleString('fr-FR').replace(/\s/g,' ')+')');return true;}
@@ -130,7 +139,7 @@ class Table{
   static fromJSON(d){const t=new Table(d);Object.assign(t,{pendingMode:d.pendingMode||null,seats:d.seats,variant:d.variant,button:d.button,log:d.log||[]});return t;}
   view(id){const me=this.seatOf(id),h=this.hand;
     return {turnStart:h?h.turnStart:0,stage:this.stage,mode:this.mode,pendingMode:this.pendingMode||null,variant:this.variant,sb:this.sb,bb:this.bb,button:this.button,toAct:this.toAct,me,
-      chooser:this.stage==='choosing'?this.chooser:-1,choiceDeadline:this.choiceDeadline,log:this.log.slice(-8),
+      lastAction:this.lastAction||'',chooser:this.stage==='choosing'?this.chooser:-1,choiceDeadline:this.choiceDeadline,log:this.log.slice(-8),
       board:h?h.board:[],pot:h?this.potTotal():0,currentBet:h?h.currentBet:0,results:h?h.results:null,
       limits:(h&&me===this.toAct&&me>=0)?this.limits(me):null,
       spectator:me<0,seats:this.seats.map((s,i)=>s&&{name:s.name,rebuys:s.rebuys||0,rebuyTotal:s.rebuyTotal||0,engaged:s.engaged||CONFIG.STACK,bilan:s.chips+(h&&h.pl[i]&&this.stage!=='showdown'?h.pl[i].total:0)-(s.engaged||CONFIG.STACK),last:h&&h.pl[i]?h.pl[i].last||null:null,chips:s.chips,connected:s.connected,

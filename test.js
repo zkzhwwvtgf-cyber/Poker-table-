@@ -45,7 +45,31 @@ setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.variant,'omaha','délai -> 
  const sum=()=>T.view('a').seats.filter(x=>x).reduce((s,x)=>s+x.bilan,0);a.equal(sum(),-5000+0);// pile 3000 sur 8000 engagés, autres 0
  T.seats[0].chips+=5000;a.equal(sum(),0);console.log('✓ engagement / net / somme nulle');
  T.startHand();T.fullReset();a.equal(T.stage,'waiting');a(T.seats.filter(x=>x).every(x=>x.chips===5000&&x.rebuys===0&&x.engaged===5000));console.log('✓ réinitialisation complète');
- T.startHand();T.addPlayer('d','D');T.seats[0].chips=1234;T.resetStacks();a.equal(T.pendingReset,true);while(T.stage!=='showdown')T.act(T.seats[T.toAct].id,'fold');T.startHand();
- a(T.seats.filter(x=>x).every(x=>x.chips+(T.hand.pl[T.seats.indexOf(x)]?T.hand.pl[T.seats.indexOf(x)].total:0)===5000));console.log('✓ nouveau joueur -> 5 000 à la fin de la main en cours');
+ T.seats[0].chips=1234;const i=T.addPlayer('d','D');a.equal(T.seats[i].chips,5000);a.equal(T.seats[0].chips,1234);a.notEqual(T.pendingReset,true);console.log('✓ nouveau joueur : lui seul reçoit 5 000, les autres piles intactes');
+ T.startHand();
  const id=T.seats[T.toAct].id,before=T.toAct;T.removePlayer(id);a.equal(T.seats[before],null);a.notEqual(T.toAct,before);
  let g=0;while(T.stage!=='showdown'&&g++<50){const L=T.limits(T.toAct);T.act(T.seats[T.toAct].id,L.toCall?'call':'check');}a.equal(T.stage,'showdown');console.log('✓ départ immédiat pendant la main');}
+
+{// joueur déconnecté : parole/couché automatique après le délai du tour, retour possible
+ const T=new Table({awayDelay:30});T.addPlayer('a','A');T.addPlayer('b','B');T.addPlayer('c','C');T.startHand();const who=T.seats[T.toAct].id,i0=T.toAct;
+ T.setConnected(who,false);a.equal(T.seats[i0].connected,false);a(T.log.at(-1).includes('déconnecté'));
+ setTimeout(()=>{a.notEqual(T.toAct,i0);a.equal(T.hand.pl[i0].folded,true);T.setConnected(who,true);a.equal(T.seats[i0].connected,true);console.log('✓ déconnecté : couché automatiquement à son tour, siège gardé');
+  serverTest();},120);}
+function serverTest(){const {spawn}=require('child_process'),{io}=require('socket.io-client');const PORT=3900+Math.floor(Math.random()*90);
+ const S=spawn(process.execPath,[__dirname+'/server.js'],{env:{...process.env,PORT,GRACE_MS:'800',AWAY_MS:'200'},stdio:'ignore'});const U='http://localhost:'+PORT;const w=ms=>new Promise(r=>setTimeout(r,ms));
+ const mk=()=>{const s=io(U,{transports:['websocket'],reconnection:false,forceNew:true});s.on('state',x=>s.st=x);return s;};
+ const fail=e=>{console.error('✗',e);S.kill();process.exit(1);};
+ (async()=>{await w(700);const A=mk(),B=mk(),C=mk();await w(300);
+  const code=await new Promise(r=>A.emit('create',{name:'A',token:'ta'},x=>r(x.code)));
+  await new Promise(r=>A.emit('join',{code,name:'A',token:'ta'},r));await new Promise(r=>B.emit('join',{code,name:'B',token:'tb'},r));
+  A.emit('start');await w(200);const bi=A.st.seats.findIndex(x=>x&&x.name==='B');B.close();await w(150);
+  a.equal(A.st.seats[bi].connected,false);a(A.st.seats[bi].name==='B');
+  // retour avec le même jeton : même siège, même pile
+  const chips=A.st.seats[bi].chips;const B2=mk();await w(200);await new Promise(r=>B2.emit('join',{code,name:'B',token:'tb'},r));await w(100);
+  a.equal(A.st.seats[bi].connected,true);a.equal(A.st.seats[bi].chips,chips);a.equal(A.st.seats.filter(x=>x).length,2);
+  // nouveau venu : seul lui à 5 000
+  await new Promise(r=>C.emit('join',{code,name:'C',token:'tc'},r));await w(100);a.equal(A.st.seats.filter(x=>x).length,3);
+  // plus personne connecté : la table survit pendant la grâce, puis disparaît
+  A.close();B2.close();C.close();await w(300);const D=mk();await w(200);const r1=await new Promise(r=>D.emit('join',{code,name:'A',token:'ta'},r));a(r1.ok,'table supprimée pendant la grâce');await w(150);
+  a(D.st.seats.filter(x=>x).length>=1);D.close();await w(1500);const E=mk();await w(200);const r2=await new Promise(r=>E.emit('join',{code,name:'Z',token:'tz'},r));a.equal(r2.error,'Table introuvable');E.close();
+  console.log('✓ serveur : grâce 120 s, reconnexion jeton, table conservée puis supprimée');S.kill();console.log('Tests serveur OK');process.exit(0);})().catch(fail);}
