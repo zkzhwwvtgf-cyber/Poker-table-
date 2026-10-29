@@ -97,6 +97,15 @@ function serverTest(){const {spawn}=require('child_process'),{io}=require('socke
   // avatar emoji + photo validés
   {const P=mk();await w(200);await new Promise(r=>P.emit('join',{code,name:'P',token:'tp',avatar:'🦊',photo:'javascript:x'},r));await w(150);const pi=A.st.seats.findIndex(x=>x&&x.name==='P');a.equal(A.st.seats[pi].avatar,'🦊');
    let ph=null;A.on('photos',m=>ph=m);P.emit('join',{code,name:'P',token:'tp',photo:'data:image/jpeg;base64,AAAA'},()=>{});await w(200);a.equal(A.st.seats[pi].avatar,'photo');a.equal(ph[pi],'data:image/jpeg;base64,AAAA');P.close();await w(100);console.log('✓ serveur : avatars (emoji, photo validée)');}
+  // vocal : relais de signalisation seulement entre sockets de la même table, tailles et débit limités
+  {let got=[];B2.on('vsig',m=>got.push(m));let vl=null;A.on('voice',l=>vl=l);A.emit('vjoin');B2.emit('vjoin');await w(200);a.equal(vl.length,2);
+   A.emit('vsig',{to:B2.id,data:{sdp:{type:'offer',sdp:'v=0'}}});await w(150);a.equal(got.length,1);a.equal(got[0].from,A.id);
+   const O=mk();await w(200);const c2=await new Promise(r=>O.emit('create',{name:'O',token:'to'},x=>r(x.code)));await new Promise(r=>O.emit('join',{code:c2,name:'O',token:'to'},r));O.emit('vjoin');await w(100);
+   O.emit('vsig',{to:B2.id,data:{ice:{candidate:'x'}}});await w(150);a.equal(got.length,1,'relais hors table');
+   A.emit('vsig',{to:B2.id,data:{sdp:'x'.repeat(13000)}});await w(150);a.equal(got.length,1,'taille');
+   const Cx=mk();await w(200);await new Promise(r=>Cx.emit('join',{code,name:'Q',token:'tq'},r));Cx.emit('vsig',{to:B2.id,data:{ice:1}});await w(150);a.equal(got.length,1,'pas en vocal');Cx.close();
+   for(let k=0;k<80;k++)A.emit('vsig',{to:B2.id,data:{ice:{k}}});await w(400);a(got.length>=50&&got.length<=61,'débit '+got.length);
+   A.emit('vleave');await w(150);a.equal(vl.length,1);O.close();console.log('✓ serveur : vocal — relais même table, taille et débit limités');}
   // plus personne connecté : la table survit pendant la grâce, puis disparaît
   A.close();B2.close();C.close();await w(300);const D=mk();await w(200);const r1=await new Promise(r=>D.emit('join',{code,name:'A',token:'ta'},r));a(r1.ok,'table supprimée pendant la grâce');await w(150);
   a(D.st.seats.filter(x=>x).length>=1);D.close();await w(1500);const E=mk();await w(200);const r2=await new Promise(r=>E.emit('join',{code,name:'Z',token:'tz'},r));a.equal(r2.error,'Table introuvable');E.close();

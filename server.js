@@ -23,7 +23,7 @@ io.on('connection',sock=>{let room=null,tok=null;
     const j=r.t.seats.findIndex(x=>x&&!x.connected&&x.name===nm&&!r.toks[x.id]);if(j>=0){const old=r.t.seats[j].id;clearTimeout(r.grace[old]);delete r.grace[old];if(r.host===old)r.host=tok;r.t.seats[j].id=tok;i=j;}}
     if(i>=0&&r.grace[tok]){clearTimeout(r.grace[tok]);delete r.grace[tok];}
     if(i<0){i=r.t.addPlayer(tok,nm);if(i<0){r.sockets[sock.id]=tok;sock.join('r'+r.code);cb&&cb({ok:true,spectator:true,msg:'Table complète'});return push(r);}r.t.log.push(r.t.seats[i].name+' rejoint la table');}
-    if(i>=0){r.t.setConnected(tok,true);const st=r.t.seats[i];st.avatar=ph?'photo':av;r.photos=r.photos||{};if(ph)r.photos[tok]=ph;else delete r.photos[tok];}r.sockets[sock.id]=tok;sock.join('r'+r.code);cb&&cb({ok:true});push(r);sendPhotos(r);});
+    if(i>=0){r.t.setConnected(tok,true);const st=r.t.seats[i];st.avatar=ph?'photo':av;r.photos=r.photos||{};if(ph)r.photos[tok]=ph;else delete r.photos[tok];}r.sockets[sock.id]=tok;sock.join('r'+r.code);cb&&cb({ok:true});push(r);sendPhotos(r);if(r.voice)sendVoice(r);});
   const g=f=>(...a)=>{if(room){f(...a);push(room);}};
   sock.on('start',g(()=>{if(room.host===tok||room.t.stage==='showdown')room.t.startHand();}));
   sock.on('choose',g(v=>room.t.chooseVariant(tok,v)));
@@ -33,8 +33,15 @@ io.on('connection',sock=>{let room=null,tok=null;
   // réactions rapides : liste fermée, 1 par seconde et par joueur (côté serveur)
   sock.on('react',e=>{if(!room||!REACT.includes(e))return;const now=Date.now();room.rx=room.rx||{};if(now-(room.rx[tok]||0)<1000)return;room.rx[tok]=now;
     const i=room.t.seatOf(tok);if(i<0)return;io.to('r'+room.code).emit('react',{seat:i,e});});
+  // 25 : vocal WebRTC — le serveur ne relaie que la signalisation (offre/réponse/ICE) entre sockets de la même table
+  sock.on('vjoin',()=>{if(!room||!room.sockets[sock.id])return;room.voice=room.voice||{};room.voice[sock.id]={muted:false};sendVoice(room);});
+  sock.on('vleave',()=>{if(room&&room.voice&&room.voice[sock.id]){delete room.voice[sock.id];sendVoice(room);}});
+  sock.on('vmute',m=>{if(room&&room.voice&&room.voice[sock.id]){room.voice[sock.id].muted=!!m;sendVoice(room);}});
+  let vq=[];sock.on('vsig',msg=>{if(!room||!msg||typeof msg.to!=='string')return;const now=Date.now();vq=vq.filter(t=>now-t<1000);if(vq.length>=VRATE)return;vq.push(now);
+    const v=room.voice||{};if(!v[sock.id]||!v[msg.to]||!room.sockets[msg.to])return;let d;try{d=JSON.stringify(msg.data);}catch(e){return;}if(!d||d.length>VMAX)return;
+    io.to(msg.to).emit('vsig',{from:sock.id,data:msg.data});});
   sock.on('rebuy',g(amount=>room.t.rebuy(tok,amount===undefined?1000:amount)));
-  sock.on('disconnect',()=>{if(!room)return;const r=room;delete r.sockets[sock.id];
+  sock.on('disconnect',()=>{if(!room)return;const r=room;delete r.sockets[sock.id];if(r.voice&&r.voice[sock.id]){delete r.voice[sock.id];sendVoice(r);}
     if(!Object.values(r.sockets).includes(tok)&&r.t.seatOf(tok)>=0){r.t.setConnected(tok,false);clearTimeout(r.grace[tok]);
       r.grace[tok]=setTimeout(()=>{delete r.grace[tok];if(r.t.seatOf(tok)<0||r.t.seats[r.t.seatOf(tok)].connected)return;r.t.removePlayer(tok);
         if(r.host===tok){const n=r.t.seats.find(x=>x&&x.connected)||r.t.seats.find(x=>x);if(n){r.host=n.id;r.t.log.push(n.name+' devient hôte');}}cleanup(r);},GRACE);}
@@ -46,5 +53,7 @@ function cleanAv(a){return AVS.includes(a)?a:null;}
 function cleanPh(p){return typeof p==='string'&&p.length<=21000&&/^data:image\/(webp|jpeg);base64,[A-Za-z0-9+\/=]+$/.test(p)?p:null;}
 // photos envoyées à part (pas dans chaque état) : indexées par siège
 function sendPhotos(r){const m={};(r.t.seats||[]).forEach((s,i)=>{if(s&&s.avatar==='photo'&&r.photos&&r.photos[s.id])m[i]=r.photos[s.id];});io.to('r'+r.code).emit('photos',m);}
+const VMAX=+process.env.VMAX||12000,VRATE=+process.env.VRATE||60;
+function sendVoice(r){const l=Object.entries(r.voice||{}).filter(([sid])=>r.sockets[sid]).map(([sid,v])=>({sid,seat:r.t.seatOf(r.sockets[sid]),muted:v.muted}));io.to('r'+r.code).emit('voice',l);}
 function cleanup(r){if(!rooms[r.code])return;if(!r.t.seats.some(x=>x)&&!Object.keys(r.sockets).length||!r.t.seats.some(x=>x)&&!Object.keys(r.grace).length&&!Object.keys(r.sockets).length){clearTimeout(r.t.timer);clearTimeout(r.t.awayT);delete rooms[r.code];return;}push(r);}
 srv.listen(process.env.PORT||3000,'0.0.0.0',()=>console.log('Poker sur :'+(process.env.PORT||3000)));
