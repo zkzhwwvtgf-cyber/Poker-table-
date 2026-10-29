@@ -64,6 +64,13 @@ setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.variant,'omaha','délai -> 
  const T=new Table();T.addPlayer('a','A');T.addPlayer('b','B');T.addPlayer('c','C');T.startHand();let g=0;
  while(T.stage==='preflop'&&g++<20){const i=T.toAct,id=T.seats[i].id;const d=PRE.decide({mode:'any'},T.limits(i));a(T.act(id,d.action),'pré-action refusée');}a.equal(T.stage,'flop');
  console.log('✓ pré-actions : Parole/Couché, Suivre tout, Suivre X annulé si la mise change');}
+{// records de la soirée
+ const T=new Table();T.addPlayer('a','A');T.addPlayer('b','B');T.addPlayer('c','C');
+ T.startHand();while(T.stage!=='showdown'){const i=T.toAct;T.act(T.seats[i].id,'fold');}const w1=T.hand.results[0];
+ let R=T.records();a.equal(R.bluff.name,w1.name);a.equal(R.bluff.count,1);a.equal(R.wins.count,1);a.equal(R.bigPot.amount,300);a.equal(R.bestHand,null);
+ T.startHand();let g=0;while(T.stage!=='showdown'&&g++<60){const i=T.toAct,L=T.limits(i);T.act(T.seats[i].id,L.toCall?'call':'check');}
+ R=T.records();a.equal(R.bigPot.amount,600);a(R.bestHand&&R.bestHand.hand&&R.bestHand.cards.length===5);const tw=Object.values(T.rec.wins).reduce((x,y)=>x+y,0);a(tw>=2);
+ a.equal(T.view('a').records.bigPot.amount,600);T.fullReset();a.equal(T.records().bigPot,null);console.log('✓ records : plus gros pot, meilleure main, roi du bluff, mains gagnées');}
 function serverTest(){const {spawn}=require('child_process'),{io}=require('socket.io-client');const PORT=3900+Math.floor(Math.random()*90);
  const S=spawn(process.execPath,[__dirname+'/server.js'],{env:{...process.env,PORT,GRACE_MS:'800',AWAY_MS:'200'},stdio:'ignore'});const U='http://localhost:'+PORT;const w=ms=>new Promise(r=>setTimeout(r,ms));
  const mk=()=>{const s=io(U,{transports:['websocket'],reconnection:false,forceNew:true});s.on('state',x=>s.st=x);return s;};
@@ -84,6 +91,12 @@ function serverTest(){const {spawn}=require('child_process'),{io}=require('socke
   a.equal(A.st.seats[ci].connected,false,'siège volé');a.equal(A.st.seats.filter(x=>x).length,4);X.close();
   const C2=mk();await w(200);await new Promise(r=>C2.emit('join',{code,name:'C',token:'tc'},r));await w(150);a.equal(A.st.seats[ci].connected,true);C2.close();await w(100);
   console.log('✓ serveur : pas de reprise de siège par simple pseudo (jeton exigé)');
+  // réactions : diffusées, 1 par seconde max (serveur)
+  {let n=0;A.on('react',()=>n++);B2.emit('react','😂');B2.emit('react','🔥');B2.emit('react','😂');B2.emit('react','💩');await w(300);a.equal(n,1,'limite 1/s');
+   await w(900);B2.emit('react','👏');await w(200);a.equal(n,2);console.log('✓ serveur : réactions diffusées, limitées à 1/s, liste fermée');}
+  // avatar emoji + photo validés
+  {const P=mk();await w(200);await new Promise(r=>P.emit('join',{code,name:'P',token:'tp',avatar:'🦊',photo:'javascript:x'},r));await w(150);const pi=A.st.seats.findIndex(x=>x&&x.name==='P');a.equal(A.st.seats[pi].avatar,'🦊');
+   let ph=null;A.on('photos',m=>ph=m);P.emit('join',{code,name:'P',token:'tp',photo:'data:image/jpeg;base64,AAAA'},()=>{});await w(200);a.equal(A.st.seats[pi].avatar,'photo');a.equal(ph[pi],'data:image/jpeg;base64,AAAA');P.close();await w(100);console.log('✓ serveur : avatars (emoji, photo validée)');}
   // plus personne connecté : la table survit pendant la grâce, puis disparaît
   A.close();B2.close();C.close();await w(300);const D=mk();await w(200);const r1=await new Promise(r=>D.emit('join',{code,name:'A',token:'ta'},r));a(r1.ok,'table supprimée pendant la grâce');await w(150);
   a(D.st.seats.filter(x=>x).length>=1);D.close();await w(1500);const E=mk();await w(200);const r2=await new Promise(r=>E.emit('join',{code,name:'Z',token:'tz'},r));a.equal(r2.error,'Table introuvable');E.close();
