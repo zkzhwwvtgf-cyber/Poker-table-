@@ -55,7 +55,8 @@ button.red{background:linear-gradient(180deg,#ff6a6a,#c81e1e);color:#fff;box-sha
 #res{font-size:13px;margin-top:6px;font-weight:800;color:#ffe27a;text-shadow:0 0 10px #ffc83d}
 /* cards */
 .card{position:relative;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:0;width:46px;height:66px;margin:0 2px;border-radius:7px;background:#fff;background-image:none;color:#111;border:1px solid #999;box-shadow:0 2px 4px rgba(0,0,0,.45);font-family:Arial,Helvetica,sans-serif;font-variant-emoji:text;vertical-align:middle;overflow:hidden;line-height:1}
-.card .rk{font-size:26px;font-weight:900;letter-spacing:-1px}.card .st{font-size:24px;font-family:"DejaVu Sans","Segoe UI Symbol","Apple Symbols",Arial,sans-serif;margin-top:1px}.card:not(.back)::before,.card:not(.back)::after{content:none!important;display:none!important}
+.card .rk{font-size:26px;font-weight:900;letter-spacing:-1px}.card .st{font-size:24px;font-family:"DejaVu Sans","Segoe UI Symbol","Apple Symbols",Arial,sans-serif;margin-top:1px}.card .st{display:block;line-height:0;font-size:24px;font-family:inherit}.card .st svg{width:1.05em;height:1.05em;fill:currentColor;display:block}.card .st .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.card .rk{line-height:1}
+.card:not(.back)::before,.card:not(.back)::after{content:none!important;display:none!important}
 
 .card.r{color:#d0021b}.card.k{color:#111}
 .card.back{background:repeating-linear-gradient(45deg,#ff3ea5 0 5px,#b0127a 5px 10px);border:3px solid #fff}
@@ -94,6 +95,10 @@ button.red{background:linear-gradient(180deg,#ff6a6a,#c81e1e);color:#fff;box-sha
 .flash{animation:flash .6s}@keyframes flash{0%{filter:brightness(2.2)}}
 /* bar */
 #bar{position:fixed;left:0;right:0;bottom:0;padding:10px 10px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(180deg,#1a0833dd,#0b0418f8);backdrop-filter:blur(12px);border-top:2px solid #ff3ea566;box-shadow:0 -10px 30px #ff3ea522;z-index:20}
+
+.rebuy{max-width:420px;margin:0 auto 8px;display:flex;flex-direction:column;gap:6px}.rebuy .go{min-height:52px;width:100%;margin:0!important;font:900 18px Inter;background:linear-gradient(90deg,#ffd84d,#ff9a3d);color:#2a0c00;border-radius:14px;box-shadow:0 0 18px #ffc83d88}
+.rebuy .rbopts{display:flex;gap:4px}.rebuy .rbopts button{flex:1;min-height:44px;margin:0!important;padding:0 4px!important;font:800 14px Inter;background:#ffffff14;color:#fff;border:1px solid #ffffff33;border-radius:10px}.rebuy .rbopts button.on{background:#ffc83d;color:#2a0c00;border-color:#ffc83d}
+.rbnote{display:block;opacity:.7;margin:2px 0 8px;font-size:12px}#rbmenu .rebuy{margin:0 0 8px}
 #prompt{text-align:center;font-size:14px;font-weight:600}#prompt button{width:auto;padding:12px 20px;margin:6px 4px 0}
 #actions{max-width:620px;margin:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}#actions>button{flex:1;min-width:86px;margin:0}
 .chiprow{width:100%;display:flex;gap:10px;justify-content:center;align-items:center}#slider{width:100%;accent-color:#ff3ea5}
@@ -138,6 +143,19 @@ h3{font-family:Bungee;margin:0 0 10px;color:#ffe27a}
 .vseg.lob{display:flex;margin:4px 0 10px}.vseg.lob button{flex:1}
 .vpend{display:block;font-size:11px;color:#ffe27a;font-weight:800;margin-top:2px}
 @media (orientation:landscape) and (max-height:600px){.vseg button{min-width:78px;padding:0 10px;font-size:13px}.vpend{font-size:10px}}
+#gsel{display:flex;align-items:center;flex:0 0 auto}#gsel:empty{display:none}
+.gmini{margin:0;padding:0 2px;width:auto;min-height:44px;min-width:44px;background:none!important;box-shadow:none!important;border:0}
+.gmini span{display:block;padding:5px 10px;font:900 12px Inter;border-radius:999px;background:linear-gradient(90deg,#ffc83d,#ff9a3d);color:#2a0c00;white-space:nowrap;box-shadow:0 2px 6px #0008}.gmini b{opacity:.7;margin-left:2px}
+.dcwait{display:inline-block;padding:5px 10px;font:800 12px Inter;border-radius:999px;background:#000a;color:#ffe27a;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.dcbig{margin:0 auto 8px;max-width:420px}.dcbig .vseg{display:flex;gap:6px;margin-top:4px}.dcbig .vseg button{flex:1;min-height:44px;margin:0!important}.dcbig .vseg button.on{background:#ffc83d;color:#2a0c00}
+.gmini.pend span{background:#000b;color:#ffe27a;border:1px dashed #ffc83d}
+@media (orientation:landscape) and (max-height:600px){.gmini span{padding:4px 8px;font-size:11px}}
+.vseg.mini{padding:0;gap:0;background:none;border:0;box-shadow:none}
+.vseg.mini button{min-height:44px;min-width:0;padding:0 2px;background:none!important;box-shadow:none!important}
+.vseg.mini button span{display:block;padding:5px 10px;font:900 12px Inter;border-radius:999px;background:#000b;border:1px solid #ffc83d77;color:#ffe9b0;white-space:nowrap}
+.vseg.mini button.on span{background:linear-gradient(90deg,#ffc83d,#ff9a3d);color:#2a0c00;border-color:#ffc83d}
+@media (orientation:landscape) and (max-height:600px){.vseg.mini button span{padding:4px 8px;font-size:11px}}
+@media (max-width:420px){.top{flex-wrap:nowrap}.top .brand{min-width:0;flex:1 1 auto;overflow:hidden}.top .wordmark{font-size:15px}#code{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vseg.mini button span{padding:4px 7px;font-size:11px}}
 /* 25 vocal */
 #vbox{position:absolute;right:4px;top:48px;z-index:6;display:flex;flex-direction:column;gap:6px}#vbox .tbtn{position:static}#micBtn.von{background:#1d6b3aee;border-color:#7dff6a}#micBtn.vmut{background:#6b1d2aee;border-color:#ff6a7f}#vLeave{display:none}
 .av.spk{box-shadow:0 0 0 3px #7dff6a,0 0 16px #7dff6a!important}html:not(.rm) .av.spk{transition:box-shadow .1s}
@@ -211,13 +229,13 @@ html.rm .fly,html.rm .bub{display:none}
  .chiprow{gap:6px}.cbtn{width:44px!important;height:44px;flex:0 0 44px!important;font-size:11px!important}#actions>button{min-height:46px;padding:8px 6px}
  #actions:not(:empty)~#log .hist{display:none}
 }
-@media (orientation:landscape) and (max-height:600px){#log{font-size:12px!important}#log .last{font-size:13px}#log .hist{font-size:12px;max-height:3.2em;overflow:hidden}#turnban{font-size:14px;padding:4px 8px;margin-bottom:4px}.net{font-size:10px;padding:1px 6px;margin-top:2px}.tools #menuBtn{min-height:44px;padding:8px 12px;font-size:13px}}
+@media (orientation:landscape) and (max-height:600px){.rebuy .go{font-size:15px;white-space:nowrap;min-height:46px;padding:0 6px}#log{font-size:12px!important}#log .last{font-size:13px}#log .hist{font-size:12px;max-height:3.2em;overflow:hidden}#turnban{font-size:14px;padding:4px 8px;margin-bottom:4px}.net{font-size:10px;padding:1px 6px;margin-top:2px}.tools #menuBtn{min-height:44px;padding:8px 12px;font-size:13px}}
 /* paysage mobile/tablette : tout tient dans l'écran, barre d'actions à droite */
 @media (orientation:landscape) and (max-height:600px), (orientation:landscape) and (max-height:900px) and (pointer:coarse){
  :root{--bw:clamp(170px,20vw,240px);--th:46px}
  body{min-height:0;height:100dvh;overflow:hidden}
  #game{padding:4px calc(var(--bw) + 6px) 0 6px;height:100dvh;overflow:hidden}
- .top{flex-wrap:nowrap;max-width:none;width:100%;min-height:var(--th);gap:4px}
+ .top{flex-wrap:nowrap;max-width:none;width:100%;min-height:var(--th);gap:4px}#gsel{margin-left:auto}.dcwait .gi{display:none}.dcwait{max-width:84px;font-size:11px;padding:4px 8px}.gmini .gi{display:none}.gmini{padding:0}
  .top .brand img.hlogo{height:30px;width:30px}.top .jbadge .tile{width:28px;height:28px}.top .wordmark{font-size:15px;white-space:nowrap}#code{font-size:10px;white-space:nowrap}.top .brand{gap:6px;min-width:36px;flex:1 1 auto;overflow:hidden;justify-content:flex-start}.tools{flex-shrink:0}
  .tools{flex-wrap:nowrap;gap:4px}.tools button,.tools select{white-space:nowrap;max-width:120px;padding:5px 7px;font-size:11px;border-radius:10px;box-shadow:0 3px 0 #0006}
  .tablewrap{aspect-ratio:auto;width:auto;max-width:min(100%,calc((100dvh - var(--th)) * 2.3));height:calc(100dvh - var(--th) - 44px - env(safe-area-inset-bottom));margin:6px auto 0 62px}
@@ -248,13 +266,13 @@ html.rm .fly,html.rm .bub{display:none}
 <label>Blindes</label><div class="row"><input id="sb" type="number" value="100" step="100"><input id="bb" type="number" value="200" step="200"></div>
 <button class="pink" onclick="create()">Créer la table 🎉</button></div><button id="joinBtn" class="pink" onclick="join()" style="display:none">Rejoindre la table 🎉</button><p id="err" style="color:#ff8aa0;text-align:center;font-weight:700"></p></div><div class="loc">Neuilly-sur-Seine<br><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div></div>
 <div id="game"><div class="top"><div class="brand"><a class="tlink" href="https://poker-stephane.onrender.com" target="_self" aria-label="Steph&#39;s Table — accueil"><img class="hlogo" src="/logo-128.webp?v=3" alt="Steph&#39;s Table" width="128" height="128" loading="lazy" onerror="this.onerror=null;this.src='/logo.png'"></a><div><div class="wordmark rainbow" id="wm2"></div><div id="code"></div></div><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div>
-<div class="tools"><button id="menuBtn" class="alt" onclick="openMenu()" aria-label="Menu de la table">⚙️ Menu</button></div></div>
+<div id="gsel"></div><div class="tools"><button id="menuBtn" class="alt" onclick="openMenu()" aria-label="Menu de la table">⚙️ Menu</button></div></div>
 <div class="tablewrap" id="tw"><div class="rail"></div><div class="felt"><div class="ring"></div><div class="feltlogo">Steph&#39;s Table</div></div><div class="center"><div id="badge"></div><div id="board"></div><div class="pot" id="pot"></div><div id="res"></div></div><div id="seats"></div><div id="vbox"><button type="button" id="micBtn" class="tbtn" onclick="micTap()" aria-label="Vocal">🎤</button><button type="button" id="vLeave" class="tbtn" onclick="vLeave()" aria-label="Quitter le vocal">📴</button></div><button type="button" id="muteBtn" class="tbtn" onclick="setMute(!MUTE)" aria-label="Son">🔊</button><button type="button" id="rxBtn" class="tbtn" onclick="$('rxbar').classList.toggle('open')" aria-label="Réactions">😊</button><div id="rxbar"><button type="button" onclick="react('😂')">😂</button><button type="button" onclick="react('😱')">😱</button><button type="button" onclick="react('👏')">👏</button><button type="button" onclick="react('🍀')">🍀</button><button type="button" onclick="react('🔥')">🔥</button><button type="button" onclick="react('😎')">😎</button></div><button type="button" id="invBtn" class="invlogo" onclick="shareInvite()" aria-label="Inviter des amis à cette table" title="Inviter à la table"><img src="/logo-cut.webp?v=3" loading="lazy" alt="" onerror="this.onerror=null;this.src='/logo-cut.png'"><span>✉ Inviter</span></button></div><div class="loc">Neuilly-sur-Seine<br><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div>
 <div id="bar"><div id="turnban">À toi ! 🎯</div><div id="prompt"></div><div id="actions"></div><div id="log"></div></div></div>
 <div class="modal" id="menu" onclick="if(event.target===this)this.style.display='none'"><div class="panel menu"><h3>Menu de la table</h3>
 <div id="hostbar"><button onclick="closeMenu();openInvite()">📱 Inviter par SMS</button><button class="alt" onclick="closeMenu();copyLink()">🔗 Copier le lien</button><button class="alt" onclick="closeMenu();share()">📤 Partager</button>
 </div>
-<div id="guestbar"><button class="alt" onclick="closeMenu();copyLink()">🔗 Copier le lien</button><button class="alt" onclick="closeMenu();share()">📤 Partager</button></div>
+<div id="rbmenu"></div><div id="guestbar"><button class="alt" onclick="closeMenu();copyLink()">🔗 Copier le lien</button><button class="alt" onclick="closeMenu();share()">📤 Partager</button></div>
 <button class="cyan" onclick="closeMenu();openBilan()">📊 Bilan</button>
 <button type="button" id="vMenu" class="cyan" onclick="closeMenu();VOICE.on?vLeave():vJoin()">🎤 Rejoindre le vocal</button><label class="rmt"><input type="checkbox" id="mutebox" onchange="setMute(this.checked)"> 🔇 Son coupé</label><label class="rmt"><input type="checkbox" id="rmbox" onchange="setRM(this.checked)"> Animations réduites</label><div id="dangerbar" class="danger"><button class="red" onclick="if(confirm('Réinitialiser la table ? Toutes les piles reviennent à 5 000 et les compteurs à zéro.')){closeMenu();sock.emit('reset')}">♻ Réinitialiser la table</button></div>
 <button class="alt" onclick="closeMenu()">Fermer</button></div></div>
@@ -282,8 +300,13 @@ const MN={holdem:"Hold'em",omaha:'Omaha',omahanl:'Omaha NL',dealer:'Choix du don
 function setMode(v){sock.emit('settings',{mode:v});const busy=S&&!['waiting'].includes(S.stage);toast((busy?'Prochaine main : ':'Jeu : ')+MN[v]);}
 function lobMode(v){$('mode').value=v;[...$('lobseg').children].forEach((b,i)=>b.classList.toggle('on',(i?'omaha':'holdem')===v));}
 const uiM=m=>m==='omaha'||m==='omahanl'?'omaha':'holdem';
-function gameHTML(s){const cur=uiM(s.pendingMode||s.mode),pend=s.pendingMode&&s.stage!=='waiting'?'<small class="vpend">dès la prochaine main</small>':'';
+const esc=x=>String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function nextG(s){return uiM(s.pendingMode||s.mode);}
+function dcMini(s){const cur=nextG(s),nx=cur==='omaha'?'holdem':'omaha';return `<button type="button" class="gmini ${s.nextChosen?'':'pend'}" onclick="pickNext('${nx}')" aria-label="Tu donnes : choisis le jeu. Prochaine main : ${MN[cur]} — toucher pour ${MN[nx]}" title="🎲 Tu donnes : choisis le jeu"><span>🎲<i class="gi"> Tu donnes :</i> ${MN[cur]} <b>⇄</b></span></button>`;}
+function pickNext(v){sock.emit('nextgame',v);toast('Tu choisis : '+MN[v]);}
+function gameHTML(s,mini){const cur=uiM(s.pendingMode||s.mode),pend=s.pendingMode&&s.stage!=='waiting'?'<small class="vpend">dès la prochaine main</small>':'';
  if(!s.host)return '<span class="badge">'+(s.stage==='waiting'?MN[uiM(s.mode)]:VN[s.variant])+(s.pendingMode&&s.stage!=='waiting'?' · prochaine : '+MN[uiM(s.pendingMode)]:'')+'</span>';
+ if(mini){const nx=cur==='omaha'?'holdem':'omaha';return `<button type="button" class="gmini ${s.pendingMode?'pend':''}" onclick="setMode('${nx}')" aria-label="Jeu : ${MN[cur]}${s.pendingMode?' (prochaine main)':''} — toucher pour passer à ${MN[nx]}" title="Toucher pour passer à ${MN[nx]} (prochaine main)"><span><i class="gi">🃏 </i>${MN[cur]} <b>⇄</b></span></button>`;}
  return `<div class="vseg" role="radiogroup" aria-label="Jeu">${['holdem','omaha'].map(m=>`<button type="button" role="radio" aria-checked="${cur===m}" class="${cur===m?'on':''}" onclick="${cur===m?'':`setMode('${m}')`}">${MN[m]}</button>`).join('')}</div>${pend}`;}
 function closeMenu(){$('menu').style.display='none';}
 function openInvite(){$('inv').style.display='flex';}
@@ -303,9 +326,11 @@ function recHTML(){const R=S.records||{},b=R.bigPot,h=R.bestHand,f=R.bluff,w=R.w
  return `<h4 class="rech">🌙 Records de la soirée</h4>`+row('💰','Plus gros pot',b&&b.name+' · '+fmt(b.amount))+row('🃏','Meilleure main abattue',h&&h.name+' · '+h.hand+' <small>'+(h.cards||[]).map(c=>(({T:'10',J:'V',Q:'D',K:'R'})[c[0]]||c[0])+SY[c[1]]).join(' ')+'</small>')+row('🎭','Roi du bluff',f&&f.name+' · '+f.count+' pot'+(f.count>1?'s':'')+' sans abattage')+row('🏆','Plus de mains gagnées',w&&w.name+' · '+w.count);}
 function openBilan(){$('bilbody').innerHTML=bilanHTML();$('bil').style.display='flex';}
 const SY={s:'♠\uFE0E',h:'♥\uFE0E',d:'♦\uFE0E',c:'♣\uFE0E'};let seen=new Set(),nowSeen;
+const SP={s:'M50 4C38 22 8 38 8 62c0 14 11 23 23 23 7 0 12-3 15-7-1 7-4 13-10 18h28c-6-5-9-11-10-18 3 4 8 7 15 7 12 0 23-9 23-23C92 38 62 22 50 4z',h:'M50 94C30 76 4 58 4 32 4 16 16 5 29 5c10 0 17 6 21 14 4-8 11-14 21-14 13 0 25 11 25 27 0 26-26 44-46 62z',d:'M50 2L88 50 50 98 12 50z',c:'M50 4a21 21 0 0 0-17 33 21 21 0 1 0 12 32c-1 9-4 15-10 23h30c-6-8-9-14-10-23a21 21 0 1 0 12-32A21 21 0 0 0 50 4z'};
+const SVGS=k=>`<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="${SP[k]}"/></svg><span class="sr">${SY[k]}</span>`;
 function card(c,key,hl){if(c==='??'){const k='b'+key;const n=!seen.has(k);nowSeen.add(k);return `<span class="card back ${n?'deal':''}"></span>`;}
  const k=key+c,n=!seen.has(k);nowSeen.add(k);const r=({T:'10',J:'V',Q:'D',K:'R'})[c[0]]||c[0],s=SY[c[1]];
- return `<span class="card ${c[1]==='h'||c[1]==='d'?'r':'k'} ${hl===true?'hl':(hl||'')} ${n?(seen.has('b'+key)?'flip':'deal'):''}"><span class="rk">${r}</span><span class="st">${s}</span></span>`;}
+ return `<span class="card ${c[1]==='h'||c[1]==='d'?'r':'k'} ${hl===true?'hl':(hl||'')} ${n?(seen.has('b'+key)?'flip':'deal'):''}"><span class="rk">${r}</span><span class="st">${SVGS(c[1])}</span></span>`;}
 const VN={holdem:"Texas Hold'em",omaha:'Omaha',omahanl:'Omaha No-Limit'};const AV=['#ff3ea5','#ffb020','#22c7ff','#5fdc4a','#a06bff','#ff6a3d'];
 const DEN=[1000,500,200,100];function chips(a){if(!a)return'';let r=a,h='';for(const d of DEN){let n=Math.floor(r/d);r-=n*d;if(n){n=Math.min(n,8);let c='';for(let i=0;i<n;i++)c+=`<span class="ch c${d}" style="bottom:${i*4}px"></span>`;h+=`<span class="col" style="height:${12+n*4}px">${c}</span>`;}}return '<span class="stk">'+h+'</span>';}
 let build=0,lastPending=null;
@@ -328,9 +353,12 @@ function effects(){if(!P){fx0();return;}const potEl=$('pot');fx0();
  if(S.stage!==P.stage&&P.pot)setTimeout(()=>potEl.classList.add('bump'),500),setTimeout(()=>potEl.classList.remove('bump'),1100);
  // pot -> gagnant
  if(S.stage==='showdown'&&P.stage!=='showdown'&&S.results)S.results.forEach(r=>{const el=document.querySelector(`[data-seat="${r.seat}"]`);if(el)fly(center(potEl),center(el),8);if(r.seat===S.me)toast('🏆 Tu gagnes '+fmt(r.amount)+' !');});}
+let RBV=1000;function rbHTML(id){return `<div id="${id}" class="rebuy"><div class="rbopts" role="radiogroup" aria-label="Montant de la recave">${[1000,2000,3000,4000,5000].map(v=>`<button type="button" role="radio" aria-checked="${v===RBV}" class="${v===RBV?'on':''}" onclick="RBV=${v};render()">${v/1000}k</button>`).join('')}</div><button type="button" class="go" onclick="sock.emit('rebuy',RBV);${id==='rebuyMenu'?'closeMenu();':''}">💰 Se recaver · ${fmt(RBV)}</button></div>`;}
 function render(){const s=S,me=s.me;nowSeen=new Set();$('code').textContent='Table '+s.code+' · blindes '+s.sb+'/'+s.bb;$('hostbar').style.display=s.host?'block':'none';$('guestbar').style.display=s.host?'none':'block';$('dangerbar').style.display=s.host?'block':'none';
  const pend=s.pendingMode?' · ensuite : '+MN[s.pendingMode]:'';
- $('badge').innerHTML=s.stage==='choosing'?'<span class="badge wait">'+s.seats[s.chooser].name+' choisit la variante…</span>':gameHTML(s);
+ {const started=s.button>=0||s.stage!=='waiting',nd=s.nextDealer,mine=nd>=0&&nd===me,ndn=nd>=0&&s.seats[nd]?s.seats[nd].name:'';
+ $('badge').innerHTML=s.stage==='choosing'?'<span class="badge wait">'+s.seats[s.chooser].name+' choisit la variante…</span>':started?'<span class="badge">'+VN[s.variant]+'</span>':gameHTML(s);
+ $('gsel').innerHTML=!started||nd<0||s.mode==='dealer'?'':mine?dcMini(s):`<span class="dcwait" aria-live="polite">${s.nextChosen?'⏭<i class="gi"> Prochaine :</i> '+MN[s.nextChosen]:'🎲 '+esc(ndn)+'<i class="gi"> choisit le jeu</i>…'}</span>`;}
  const W=new Set(s.stage==='showdown'&&s.results?s.results.flatMap(r=>r.cards||[]):[]);const wc=c=>W.size?(W.has(c)?'hl':'dim'):false;
  $('board').innerHTML=s.board.map((c,i)=>card(c,'bd'+i,wc(c))).join('');$('pot').innerHTML=s.pot&&s.stage!=='showdown'?chips(s.pot)+' Pot : '+fmt(s.pot):'Pot : 0';
  const winners=new Set(s.stage==='showdown'&&s.results?s.results.map(r=>r.seat):[]);
@@ -347,7 +375,9 @@ function render(){const s=S,me=s.me;nowSeen=new Set();$('code').textContent='Tab
  if(s.stage==='waiting')seen=new Set();else seen=nowSeen;
  let pr='';if(s.stage==='choosing'){if(s.chooser===me)pr=`<b style="font-family:Bungee;font-size:18px;color:#ffe27a">Quelle variante ?</b> <span id="cd"></span><br><button class="cyan" onclick="sock.emit('choose','holdem')">Hold'em</button><button class="pink" onclick="sock.emit('choose','omaha')">Omaha PL</button><button onclick="sock.emit('choose','omahanl')">Omaha NL</button>`;else pr=s.seats[s.chooser].name+' choisit la variante… <span id="cd"></span>';}
  else if(s.stage==='waiting'||s.stage==='showdown'){pr=(s.host||s.stage==='showdown')?`<button class="pink" onclick="sock.emit('start')">${s.stage==='waiting'?'Lancer la partie 🚀':'Main suivante ▶'}</button>`:'En attente de l’hôte…';if(s.seats.filter(x=>x).length<2)pr='En attente d’autres joueurs… Invite tes amis ! 📱';}
- if(me>=0&&s.seats[me].chips===0&&!(s.seats[me].inHand&&!['waiting','showdown','choosing'].includes(s.stage)))pr+=`<div style="margin-top:6px"><b>Se recaver :</b><div class="row" style="justify-content:center;flex-wrap:wrap">${[1000,2000,3000,4000,5000].map(v=>`<button class="red" style="width:auto;padding:10px 12px" onclick="sock.emit('rebuy',${v})">+${fmt(v)}</button>`).join('')}</div></div>`;
+ const canRb=me>=0&&!s.spectator&&s.seats[me]&&s.seats[me].chips<s.bb&&!(s.seats[me].inHand&&!['waiting','showdown','choosing'].includes(s.stage));if(canRb)pr=rbHTML('rebuyBig')+pr;
+ $('rbmenu').innerHTML=me>=0&&!s.spectator?(canRb?rbHTML('rebuyMenu'):'<button disabled>💰 Se recaver</button><small class="rbnote">Possible quand ta pile est sous la grosse blinde ('+fmt(s.bb)+'), entre deux mains.</small>'):'';
+ if(s.nextDealer>=0&&s.nextDealer===me&&s.mode!=='dealer'&&['waiting','showdown'].includes(s.stage)&&s.button>=0){const cur=nextG(s);pr=`<div class="dcbig"><b>🎲 Tu donnes : choisis le jeu</b><div class="vseg">${['holdem','omaha'].map(v=>`<button type="button" class="${v===cur?'on':''}" aria-pressed="${v===cur}" onclick="pickNext('${v}')">${MN[v]}</button>`).join('')}</div></div>`+pr;}
  if(s.spectator)pr='<b>Table complète</b> — tu regardes en spectateur.';$('prompt').innerHTML=pr;
  const L=s.limits;if(L){const b=L.toCall>0;$('actions').innerHTML=(L.canRaise?`<div class="chiprow">${[100,200,500,1000].map(d=>`<button class="cbtn c${d}" onclick="addChip(${d})">${d===1000?'1 000':d}</button>`).join('')}<button class="alt" style="width:auto;margin:0;padding:10px 14px" onclick="build=0;addChip(0)">↺</button></div><div class="shortrow">${shortcuts(s,L)}</div><input type="range" id="slider" min="${L.minTo}" max="${L.maxTo}" step="100" value="${L.minTo}" oninput="$('rb').textContent=(this.value==${L.maxTo}?'${s.variant==='omaha'?'Pot':'Tapis'} ':'Relancer ')+fmt(+this.value)">`:'')+
   `<button class="alt" onclick="act('fold')">Se coucher</button>`+(b?`<button class="cyan" onclick="act('call')">Suivre ${fmt(L.toCall)}</button>`:`<button class="cyan" onclick="act('check')">Parole</button>`)+(L.canRaise?`<button class="pink" onclick="act('raise',+$('slider').value)" id="rb">Relancer ${fmt(L.minTo)}</button>`:'');build=L.minTo;if(!P||P.toAct!==me){if(navigator.vibrate)navigator.vibrate(200);}}else{$('actions').innerHTML=preHTML(s);build=0;}

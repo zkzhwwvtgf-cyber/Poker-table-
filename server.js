@@ -28,7 +28,7 @@ io.on('connection',sock=>{let room=null,tok=null;
   sock.on('start',g(()=>{if(room.host===tok||room.t.stage==='showdown')room.t.startHand();}));
   sock.on('choose',g(v=>room.t.chooseVariant(tok,v)));
   sock.on('act',g(({action,amount})=>room.t.act(tok,action,amount)));
-  sock.on('settings',g(({mode,sb,bb})=>{if(room.host!==tok)return;const t=room.t;if(mode)t.setMode(uiMode(mode));if(!['waiting','showdown'].includes(t.stage))return;if(!sb&&!bb)return;if(+sb&&sb%100===0)t.sb=+sb;if(+bb&&bb%100===0)t.bb=+bb;t.log.push('Réglages : '+({holdem:"Hold'em",omaha:'Omaha PL',omahanl:'Omaha NL',dealer:'Choix du donneur'})[t.mode]+' '+t.sb+'/'+t.bb);}));
+  sock.on('settings',g(({mode,sb,bb})=>{if(room.host!==tok)return;const t=room.t;if(mode&&t.button<0&&t.stage==='waiting')t.setMode(uiMode(mode));if(!['waiting','showdown'].includes(t.stage))return;if(!sb&&!bb)return;if(+sb&&sb%100===0)t.sb=+sb;if(+bb&&bb%100===0)t.bb=+bb;t.log.push('Réglages : '+({holdem:"Hold'em",omaha:'Omaha PL',omahanl:'Omaha NL',dealer:'Choix du donneur'})[t.mode]+' '+t.sb+'/'+t.bb);}));
   sock.on('reset',g(()=>{if(room.host===tok){room.t.fullReset();io.to('r'+room.code).emit('toast','Table réinitialisée : tout le monde repart à 5 000');}}));
   // réactions rapides : liste fermée, 1 par seconde et par joueur (côté serveur)
   sock.on('react',e=>{if(!room||!REACT.includes(e))return;const now=Date.now();room.rx=room.rx||{};if(now-(room.rx[tok]||0)<1000)return;room.rx[tok]=now;
@@ -40,6 +40,7 @@ io.on('connection',sock=>{let room=null,tok=null;
   let vq=[];sock.on('vsig',msg=>{if(!room||!msg||typeof msg.to!=='string')return;const now=Date.now();vq=vq.filter(t=>now-t<1000);if(vq.length>=VRATE)return;vq.push(now);
     const v=room.voice||{};if(!v[sock.id]||!v[msg.to]||!room.sockets[msg.to])return;let d;try{d=JSON.stringify(msg.data);}catch(e){return;}if(!d||d.length>VMAX)return;
     io.to(msg.to).emit('vsig',{from:sock.id,data:msg.data});});
+  sock.on('nextgame',g(v=>room.t.chooseNext(tok,v)));
   sock.on('rebuy',g(amount=>room.t.rebuy(tok,amount===undefined?1000:amount)));
   sock.on('disconnect',()=>{if(!room)return;const r=room;delete r.sockets[sock.id];if(r.voice&&r.voice[sock.id]){delete r.voice[sock.id];sendVoice(r);}
     if(!Object.values(r.sockets).includes(tok)&&r.t.seatOf(tok)>=0){r.t.setConnected(tok,false);clearTimeout(r.grace[tok]);
