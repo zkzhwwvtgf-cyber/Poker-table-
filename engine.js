@@ -119,7 +119,7 @@ class Table{
       const pots=sidePots(Object.entries(h.pl).map(([j,p])=>({id:+j,amount:p.total,folded:p.folded})));
       for(const pot of pots){let best=null,ws=[];for(const j of pot.eligible){const c=best?cmp(ev[j].score,best):1;if(c>0){best=ev[j].score;ws=[j];}else if(c===0)ws.push(j);}
         const N=this.seats.length,U=CONFIG.UNIT;ws.sort((a,b)=>((a-this.button-1+N)%N)-((b-this.button-1+N)%N));const share=Math.floor(pot.amount/ws.length/U)*U;let odd=pot.amount-share*ws.length;
-        for(const w of ws){const x=Math.min(odd,U);odd-=x;const a=share+x;this.seats[w].chips+=a;res.push({seat:w,amount:a,name:this.seats[w].name,hand:ev[w].name});this.log.push(this.seats[w].name+' gagne '+a+' ('+ev[w].name+')');}}
+        for(const w of ws){const x=Math.min(odd,U);odd-=x;const a=share+x;this.seats[w].chips+=a;res.push({seat:w,amount:a,name:this.seats[w].name,hand:ev[w].name,cards:ev[w].cards});this.log.push(this.seats[w].name+' gagne '+a+' ('+ev[w].name+')');}}
       h.shown=Object.fromEntries(live.map(j=>[j,{hole:h.pl[j].hole,name:ev[j].name}]));}
     h.results=res;this.stage='showdown';this.toAct=-1;clearTimeout(this.awayT);this.awayKey=null;}
   resetStacks(){if(this.stage!=='waiting'&&this.stage!=='showdown'){this.pendingReset=true;this.log.push('Nouveau joueur : piles remises à 5 000 à la prochaine main');return;}

@@ -55,6 +55,15 @@ setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.variant,'omaha','délai -> 
  T.setConnected(who,false);a.equal(T.seats[i0].connected,false);a(T.log.at(-1).includes('déconnecté'));
  setTimeout(()=>{a.notEqual(T.toAct,i0);a.equal(T.hand.pl[i0].folded,true);T.setConnected(who,true);a.equal(T.seats[i0].connected,true);console.log('✓ déconnecté : couché automatiquement à son tour, siège gardé');
   serverTest();},120);}
+{const PRE=require('./public/pre.js');const L0={toCall:0},L2={toCall:200};
+ a.deepEqual(PRE.decide({mode:'cf'},L0),{action:'check'});a.deepEqual(PRE.decide({mode:'cf'},L2),{action:'fold'});
+ a.deepEqual(PRE.decide({mode:'any'},L0),{action:'check'});a.deepEqual(PRE.decide({mode:'any'},L2),{action:'call'});
+ a.deepEqual(PRE.decide({mode:'call',amt:200},L2),{action:'call'});a.equal(PRE.decide({mode:'call',amt:200},{toCall:600}),null);a.equal(PRE.decide(null,L2),null);
+ a.equal(PRE.update({mode:'call',amt:200},600),null);a.deepEqual(PRE.update({mode:'any'},600),{mode:'any'});a.deepEqual(PRE.update({mode:'cf'},600),{mode:'cf'});
+ // avec le moteur : B coche « Suivre tout », A relance, B suit automatiquement
+ const T=new Table();T.addPlayer('a','A');T.addPlayer('b','B');T.addPlayer('c','C');T.startHand();let g=0;
+ while(T.stage==='preflop'&&g++<20){const i=T.toAct,id=T.seats[i].id;const d=PRE.decide({mode:'any'},T.limits(i));a(T.act(id,d.action),'pré-action refusée');}a.equal(T.stage,'flop');
+ console.log('✓ pré-actions : Parole/Couché, Suivre tout, Suivre X annulé si la mise change');}
 function serverTest(){const {spawn}=require('child_process'),{io}=require('socket.io-client');const PORT=3900+Math.floor(Math.random()*90);
  const S=spawn(process.execPath,[__dirname+'/server.js'],{env:{...process.env,PORT,GRACE_MS:'800',AWAY_MS:'200'},stdio:'ignore'});const U='http://localhost:'+PORT;const w=ms=>new Promise(r=>setTimeout(r,ms));
  const mk=()=>{const s=io(U,{transports:['websocket'],reconnection:false,forceNew:true});s.on('state',x=>s.st=x);return s;};
@@ -69,6 +78,12 @@ function serverTest(){const {spawn}=require('child_process'),{io}=require('socke
   a.equal(A.st.seats[bi].connected,true);a.equal(A.st.seats[bi].chips,chips);a.equal(A.st.seats.filter(x=>x).length,2);
   // nouveau venu : seul lui à 5 000
   await new Promise(r=>C.emit('join',{code,name:'C',token:'tc'},r));await w(100);a.equal(A.st.seats.filter(x=>x).length,3);
+  // vol de siège : même pseudo mais autre jeton -> nouveau siège, l'ancien reste réservé
+  const ci=A.st.seats.findIndex(x=>x&&x.name==='C');C.close();await w(150);a.equal(A.st.seats[ci].connected,false);
+  const X=mk();await w(200);await new Promise(r=>X.emit('join',{code,name:'C',token:'tx'},r));await w(150);
+  a.equal(A.st.seats[ci].connected,false,'siège volé');a.equal(A.st.seats.filter(x=>x).length,4);X.close();
+  const C2=mk();await w(200);await new Promise(r=>C2.emit('join',{code,name:'C',token:'tc'},r));await w(150);a.equal(A.st.seats[ci].connected,true);C2.close();await w(100);
+  console.log('✓ serveur : pas de reprise de siège par simple pseudo (jeton exigé)');
   // plus personne connecté : la table survit pendant la grâce, puis disparaît
   A.close();B2.close();C.close();await w(300);const D=mk();await w(200);const r1=await new Promise(r=>D.emit('join',{code,name:'A',token:'ta'},r));a(r1.ok,'table supprimée pendant la grâce');await w(150);
   a(D.st.seats.filter(x=>x).length>=1);D.close();await w(1500);const E=mk();await w(200);const r2=await new Promise(r=>E.emit('join',{code,name:'Z',token:'tz'},r));a.equal(r2.error,'Table introuvable');E.close();

@@ -16,9 +16,10 @@ io.on('connection',sock=>{let room=null,tok=null;
   sock.on('create',({name,mode,sb,bb,token},cb)=>{const c=code();const t=new Table({mode,sb:+sb||CONFIG.SB,bb:+bb||CONFIG.BB,awayDelay:AWAY});
     const r=rooms[c]={code:c,t,host:token,sockets:{},grace:{}};t.onChange=()=>push(r);cb&&cb({code:c});});
   sock.on('join',({code:c,name,token},cb)=>{const r=rooms[(c||'').toUpperCase()];if(!r)return cb&&cb({error:'Table introuvable'});
-    room=r;tok=String(token||sock.id);let i=r.t.seatOf(tok);const nm=String(name||'Joueur').slice(0,14);
+    room=r;tok=String(token||sock.id);r.toks=r.toks||{};if(token)r.toks[tok]=1;let i=r.t.seatOf(tok);const nm=String(name||'Joueur').slice(0,14);
     // reconnexion par le même pseudo pendant le délai de grâce : on reprend le siège (et sa pile)
-    if(i<0){const j=r.t.seats.findIndex(x=>x&&!x.connected&&x.name===nm);if(j>=0){const old=r.t.seats[j].id;clearTimeout(r.grace[old]);delete r.grace[old];if(r.host===old)r.host=tok;r.t.seats[j].id=tok;i=j;}}
+    if(i<0){// seulement si le siège n'a pas de jeton (sinon il faut le même jeton) : pas de vol de siège
+    const j=r.t.seats.findIndex(x=>x&&!x.connected&&x.name===nm&&!r.toks[x.id]);if(j>=0){const old=r.t.seats[j].id;clearTimeout(r.grace[old]);delete r.grace[old];if(r.host===old)r.host=tok;r.t.seats[j].id=tok;i=j;}}
     if(i>=0&&r.grace[tok]){clearTimeout(r.grace[tok]);delete r.grace[tok];}
     if(i<0){i=r.t.addPlayer(tok,nm);if(i<0){r.sockets[sock.id]=tok;sock.join('r'+r.code);cb&&cb({ok:true,spectator:true,msg:'Table complète'});return push(r);}r.t.log.push(r.t.seats[i].name+' rejoint la table');}
     if(i>=0)r.t.setConnected(tok,true);r.sockets[sock.id]=tok;sock.join('r'+r.code);cb&&cb({ok:true});push(r);});
