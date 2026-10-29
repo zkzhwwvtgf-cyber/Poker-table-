@@ -46,7 +46,7 @@ class Table{
   addPlayer(id,name,chips=CONFIG.STACK){let i=this.seats.findIndex(s=>!s);if(i<0)return -1;this.seats[i]={id,name,chips,connected:true,sitOut:false,rebuys:0,rebuyTotal:0,engaged:chips};return i;}
   setConnected(id,on){const i=this.seatOf(id);if(i<0)return false;const s=this.seats[i];if(s.connected===on)return true;s.connected=on;
     this.log.push(s.name+(on?' est de retour':' déconnecté'));this.scheduleAway();return true;}
-  // joueur déconnecté à qui c'est le tour : parole si possible, sinon couché, après le délai du tour
+  // joueur déconnecté à qui c'est le tour : check si possible, sinon couché, après le délai du tour
   scheduleAway(){const h=this.hand,i=this.toAct,s=this.seats[i];
     const betting=h&&['preflop','flop','turn','river'].includes(this.stage);
     if(!betting||i<0||!s||s.connected){clearTimeout(this.awayT);this.awayT=null;this.awayKey=null;return;}
@@ -96,7 +96,7 @@ class Table{
     const i=this.seatOf(id),h=this.hand;if(!h||i!==this.toAct||!['preflop','flop','turn','river'].includes(this.stage))return false;
     const p=h.pl[i],s=this.seats[i],L=this.limits(i),nm=s.name;
     if(action==='fold'){p.folded=true;this.log.push(nm+' se couche');}
-    else if(action==='check'){if(L.toCall>0)return false;this.log.push(nm+' parole');}
+    else if(action==='check'){if(L.toCall>0)return false;this.log.push(nm+' check');}
     else if(action==='call'){if(L.toCall<=0)return false;this.post(i,L.toCall);this.log.push(nm+' suit');}
     else if(action==='raise'){if(!L.canRaise)return false;let to=Math.round(+amount);if(!(to>=L.minTo&&to<=L.maxTo)||(to%CONFIG.UNIT&&to!==L.maxTo))return false;
       const inc=to-h.currentBet;if(inc>=h.minRaise)h.minRaise=inc;

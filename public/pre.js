@@ -1,6 +1,6 @@
 // Pré-actions (client) : décision à prendre quand mon tour arrive. Partagé avec test.js.
 (function(g){
- // pre : {mode:'cf'} Parole/Couché · {mode:'any'} Suivre tout · {mode:'call',amt} Suivre ce montant précis
+ // pre : {mode:'cf'} Check/Couché · {mode:'any'} Suivre tout · {mode:'call',amt} Suivre ce montant précis
  function decide(pre,L){if(!pre||!L)return null;const c=L.toCall>0;
   if(pre.mode==='cf')return {action:c?'fold':'check'};
   if(pre.mode==='any')return {action:c?'call':'check'};

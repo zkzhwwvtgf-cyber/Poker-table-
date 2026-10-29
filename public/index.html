@@ -335,7 +335,7 @@ const VN={holdem:"Texas Hold'em",omaha:'Omaha',omahanl:'Omaha No-Limit'};const A
 const DEN=[1000,500,200,100];function chips(a){if(!a)return'';let r=a,h='';for(const d of DEN){let n=Math.floor(r/d);r-=n*d;if(n){n=Math.min(n,8);let c='';for(let i=0;i<n;i++)c+=`<span class="ch c${d}" style="bottom:${i*4}px"></span>`;h+=`<span class="col" style="height:${12+n*4}px">${c}</span>`;}}return '<span class="stk">'+h+'</span>';}
 let build=0,lastPending=null;
 function addChip(d){const sl=$('slider');build=Math.min(+sl.max,Math.max(+sl.min,(build||0)+d));sl.value=build;sl.oninput();}
-const AL={fold:'Couché',check:'Parole',call:'Suit',raise:'Relance',allin:'Tapis !'};
+const AL={fold:'Couché',check:'Check',call:'Suit',raise:'Relance',allin:'Tapis !'};
 function center(el){const r=el.getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2];}
 function fly(from,to,n=4){for(let i=0;i<n;i++){const c=document.createElement('div');c.className='fly';c.style.left=(from[0]-10)+'px';c.style.top=(from[1]-10)+'px';document.body.appendChild(c);
  setTimeout(()=>{c.style.transform=`translate(${to[0]-from[0]+(Math.random()*16-8)}px,${to[1]-from[1]+(Math.random()*10-5)}px)`;},30+i*70);setTimeout(()=>{c.style.opacity=0},700+i*70);setTimeout(()=>c.remove(),1500+i*70);}}
@@ -380,7 +380,7 @@ function render(){const s=S,me=s.me;nowSeen=new Set();$('code').textContent='Tab
  if(s.nextDealer>=0&&s.nextDealer===me&&s.mode!=='dealer'&&['waiting','showdown'].includes(s.stage)&&s.button>=0){const cur=nextG(s);pr=`<div class="dcbig"><b>🎲 Tu donnes : choisis le jeu</b><div class="vseg">${['holdem','omaha'].map(v=>`<button type="button" class="${v===cur?'on':''}" aria-pressed="${v===cur}" onclick="pickNext('${v}')">${MN[v]}</button>`).join('')}</div></div>`+pr;}
  if(s.spectator)pr='<b>Table complète</b> — tu regardes en spectateur.';$('prompt').innerHTML=pr;
  const L=s.limits;if(L){const b=L.toCall>0;$('actions').innerHTML=(L.canRaise?`<div class="chiprow">${[100,200,500,1000].map(d=>`<button class="cbtn c${d}" onclick="addChip(${d})">${d===1000?'1 000':d}</button>`).join('')}<button class="alt" style="width:auto;margin:0;padding:10px 14px" onclick="build=0;addChip(0)">↺</button></div><div class="shortrow">${shortcuts(s,L)}</div><input type="range" id="slider" min="${L.minTo}" max="${L.maxTo}" step="100" value="${L.minTo}" oninput="$('rb').textContent=(this.value==${L.maxTo}?'${s.variant==='omaha'?'Pot':'Tapis'} ':'Relancer ')+fmt(+this.value)">`:'')+
-  `<button class="alt" onclick="act('fold')">Se coucher</button>`+(b?`<button class="cyan" onclick="act('call')">Suivre ${fmt(L.toCall)}</button>`:`<button class="cyan" onclick="act('check')">Parole</button>`)+(L.canRaise?`<button class="pink" onclick="act('raise',+$('slider').value)" id="rb">Relancer ${fmt(L.minTo)}</button>`:'');build=L.minTo;if(!P||P.toAct!==me){if(navigator.vibrate)navigator.vibrate(200);}}else{$('actions').innerHTML=preHTML(s);build=0;}
+  `<button class="alt" onclick="act('fold')">Se coucher</button>`+(b?`<button class="cyan" onclick="act('call')">Suivre ${fmt(L.toCall)}</button>`:`<button class="cyan" onclick="act('check')">Check</button>`)+(L.canRaise?`<button class="pink" onclick="act('raise',+$('slider').value)" id="rb">Relancer ${fmt(L.minTo)}</button>`:'');build=L.minTo;if(!P||P.toAct!==me){if(navigator.vibrate)navigator.vibrate(200);}}else{$('actions').innerHTML=preHTML(s);build=0;}
  fitMine();$('turnban').style.display=(me>=0&&s.toAct===me&&s.limits)?'block':'none';
  $('log').innerHTML=(s.lastAction?'<div class="last">'+s.lastAction+'</div>':'')+'<div class="hist">'+s.log.slice(-4).reverse().filter(x=>x!==s.lastAction).slice(0,3).join(' · ')+'</div>';}
 // mes cartes toujours visibles au-dessus de la barre d'actions (portrait)
@@ -389,7 +389,7 @@ function fitMine(){requestAnimationFrame(()=>{const c=document.querySelector('.s
 const RM=()=>document.documentElement.classList.contains('rm');
 function setRM(on){document.documentElement.classList.toggle('rm',on);localStorage.pkRM=on?'1':'0';}
 function bubble(i,l){bubT[i]=Date.now();if(RM())return;const el=document.querySelector(`[data-seat="${i}"]`);if(!el)return;const r=el.getBoundingClientRect();
- const T={fold:'Couché',check:'Parole',call:'Suit '+fmt(l.amount),raise:'Relance '+fmt(l.amount),allin:'Tapis'}[l.type];if(!T)return;
+ const T={fold:'Couché',check:'Check',call:'Suit '+fmt(l.amount),raise:'Relance '+fmt(l.amount),allin:'Tapis'}[l.type];if(!T)return;
  const b=document.createElement('div');b.className='bub a-'+l.type;b.textContent=T;b.style.left=(r.left+r.width/2)+'px';b.style.top=(r.top-4)+'px';document.body.appendChild(b);setTimeout(()=>b.remove(),1300);}
 function roll(el,a,b,f,delay=0){if(RM()||a===b){el.textContent=f(b);return;}const t0=performance.now()+delay,D=900;el.textContent=f(a);
  (function st(t){const k=Math.min(1,Math.max(0,(t-t0)/D)),e=1-Math.pow(1-k,3);el.textContent=f(rt(a+(b-a)*e));if(k<1)requestAnimationFrame(st);else el.textContent=f(b);})(t0);}
@@ -467,7 +467,7 @@ let PREA=null,preHand=null;
 function preHTML(s){const me=s.me,p=me>=0&&s.seats[me];if(!p||!p.inHand||p.folded||!['preflop','flop','turn','river'].includes(s.stage)||p.chips===0)return'';
  const tc=Math.max(0,Math.min((s.currentBet||0)-(p.bet||0),p.chips)),m=PREA&&PREA.mode;
  const cb=(k,t)=>`<label class="pre ${m===k?'on':''}"><input type="checkbox" ${m===k?'checked':''} onchange="setPre('${k}',this.checked,${tc})"> ${t}</label>`;
- return `<div class="prebox"><div class="pret">Pré-actions</div>${cb('cf',tc?'Couché':'Parole/Couché')}${tc?cb('call','Suivre '+fmt(tc)):''}${cb('any','Suivre tout')}</div>`;}
+ return `<div class="prebox"><div class="pret">Pré-actions</div>${cb('cf',tc?'Couché':'Check/Couché')}${tc?cb('call','Suivre '+fmt(tc)):''}${cb('any','Suivre tout')}</div>`;}
 function setPre(k,on,tc){PREA=on?{mode:k,amt:tc}:null;$('actions').innerHTML=preHTML(S);}
 function runPre(s){if(!s.hand&&s.stage==='waiting')PREA=null;const key=s.handNo||s.code+':'+s.button+':'+(s.seats[s.me]&&s.seats[s.me].hole||[]).join('');if(key!==preHand){preHand=key;PREA=null;}
  const p=s.me>=0&&s.seats[s.me];if(!p)return;if(s.limits){const d=PRE.decide(PREA,s.limits);PREA=null;if(d){act(d.action);return true;}}

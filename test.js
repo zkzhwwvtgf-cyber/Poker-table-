@@ -61,7 +61,7 @@ setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.variant,'omaha','délai -> 
  const id=T.seats[T.toAct].id,before=T.toAct;T.removePlayer(id);a.equal(T.seats[before],null);a.notEqual(T.toAct,before);
  let g=0;while(T.stage!=='showdown'&&g++<50){const L=T.limits(T.toAct);T.act(T.seats[T.toAct].id,L.toCall?'call':'check');}a.equal(T.stage,'showdown');console.log('✓ départ immédiat pendant la main');}
 
-{// joueur déconnecté : parole/couché automatique après le délai du tour, retour possible
+{// joueur déconnecté : check/couché automatique après le délai du tour, retour possible
  const T=new Table({awayDelay:30});T.addPlayer('a','A');T.addPlayer('b','B');T.addPlayer('c','C');T.startHand();const who=T.seats[T.toAct].id,i0=T.toAct;
  T.setConnected(who,false);a.equal(T.seats[i0].connected,false);a(T.log.at(-1).includes('déconnecté'));
  setTimeout(()=>{a.notEqual(T.toAct,i0);a.equal(T.hand.pl[i0].folded,true);T.setConnected(who,true);a.equal(T.seats[i0].connected,true);console.log('✓ déconnecté : couché automatiquement à son tour, siège gardé');
@@ -74,7 +74,7 @@ setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.variant,'omaha','délai -> 
  // avec le moteur : B coche « Suivre tout », A relance, B suit automatiquement
  const T=new Table();T.addPlayer('a','A');T.addPlayer('b','B');T.addPlayer('c','C');T.startHand();let g=0;
  while(T.stage==='preflop'&&g++<20){const i=T.toAct,id=T.seats[i].id;const d=PRE.decide({mode:'any'},T.limits(i));a(T.act(id,d.action),'pré-action refusée');}a.equal(T.stage,'flop');
- console.log('✓ pré-actions : Parole/Couché, Suivre tout, Suivre X annulé si la mise change');}
+ console.log('✓ pré-actions : Check/Couché, Suivre tout, Suivre X annulé si la mise change');}
 {// records de la soirée
  const T=new Table();T.addPlayer('a','A');T.addPlayer('b','B');T.addPlayer('c','C');
  T.startHand();while(T.stage!=='showdown'){const i=T.toAct;T.act(T.seats[i].id,'fold');}const w1=T.hand.results[0];
