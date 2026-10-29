@@ -54,15 +54,15 @@ button.red{background:linear-gradient(180deg,#ff6a6a,#c81e1e);color:#fff;box-sha
 .pot.bump{animation:bump .5s}@keyframes bump{40%{transform:scale(1.25)}}
 #res{font-size:13px;margin-top:6px;font-weight:800;color:#ffe27a;text-shadow:0 0 10px #ffc83d}
 /* cards */
-.card{position:relative;display:inline-block;width:46px;height:66px;margin:0 2px;border-radius:8px;background:linear-gradient(160deg,#fff,#efe9f7);color:#15121f;box-shadow:0 5px 12px #000a;font-weight:900;vertical-align:middle}
+.card{position:relative;display:inline-block;width:46px;height:66px;margin:0 2px;border-radius:8px;background:#fff;color:#000;border:1px solid #bbb;box-shadow:0 2px 4px rgba(0,0,0,.45);font-weight:700;font-family:Georgia,'Times New Roman',serif;font-variant-emoji:text;vertical-align:middle}
 .card .ix{position:absolute;left:4px;top:3px;font-size:16px;line-height:.95;text-align:center}.card .ix i{display:block;font-style:normal;font-size:13px}
-.card .ix.b{left:auto;top:auto;right:4px;bottom:3px;transform:rotate(180deg)}.card .pip{position:absolute;left:56%;top:56%;transform:translate(-50%,-50%);font-size:22px}
-.card.r{color:#e5124f}.card.d{color:#1f6fff}.card.c{color:#0a9a4a}
+.card .ix.b{left:auto;top:auto;right:4px;bottom:3px;transform:rotate(180deg)}.card .pip{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:22px}
+.card.r{color:#c8102e}
 .card.back{background:repeating-linear-gradient(45deg,#ff3ea5 0 5px,#b0127a 5px 10px);border:3px solid #fff}
 .card.back::after{content:'♠';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:20px;text-shadow:0 0 8px #000}
 .card.deal{animation:deal .5s cubic-bezier(.2,.9,.3,1.3) both}@keyframes deal{from{transform:translate(0,-120px) rotate(-40deg) scale(.4);opacity:0}}
 .card.flip{animation:flip .55s ease both}@keyframes flip{0%{transform:rotateY(90deg) scale(1.1)}}
-.card.hl{box-shadow:0 0 0 3px #ffe27a,0 0 18px #ffc83d}
+.card.hl{outline:3px solid #ffd23f;outline-offset:1px}
 .sm .card{width:30px;height:43px;border-radius:5px}.sm .card .ix{font-size:11px;left:2px;top:2px}.sm .card .ix i{font-size:9px}.sm .card .pip,.sm .card .ix.b{display:none}.sm .card.back{border-width:2px}.sm .card.back::after{font-size:12px}
 /* chips */
 .stk{display:inline-flex;align-items:flex-end;gap:2px;vertical-align:middle}.col{position:relative;width:18px}
@@ -152,10 +152,10 @@ function bilanHTML(){const ps=S.seats.filter(x=>x);let te=0,ts=0,tn=0,tr=0,ib=0;
  const rows=ps.map(p=>{const inb=p.bilan-(p.chips-p.engaged);ib+=inb;te+=p.engaged;ts+=p.chips;tn+=p.bilan;tr+=p.rebuys;return `<tr><td>${p.name}</td><td>${fmt(p.engaged)}</td><td>${fmt(p.chips)}${inb?' <small>(+'+fmt(inb)+' en jeu)</small>':''}</td><td class="${cl(p.bilan)}">${sg(p.bilan)}</td><td>${p.rebuys}</td></tr>`;}).join('');
  const ok=tn===0;return `<table class="bilan"><thead><tr><th>Joueur</th><th>Engagé</th><th>Pile</th><th>Net</th><th>Rec.</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td>Total</td><td>${fmt(te)}</td><td>${fmt(ts+ib)}</td><td class="${ok?'pos':'neg'}">${sg(tn)}</td><td>${tr}</td></tr></tfoot></table><p style="font-size:12px;color:${ok?'#7dff6a':'#ff6a7f'}">${ok?'✔ Les comptes sont justes : total des piles = total engagé.':'⚠ Écart de '+sg(tn)}</p>`;}
 function openBilan(){$('bilbody').innerHTML=bilanHTML();$('bil').style.display='flex';}
-const SY={s:'♠',h:'♥',d:'♦',c:'♣'};let seen=new Set(),nowSeen;
+const SY={s:'♠\uFE0E',h:'♥\uFE0E',d:'♦\uFE0E',c:'♣\uFE0E'};let seen=new Set(),nowSeen;
 function card(c,key,hl){if(c==='??'){const k='b'+key;const n=!seen.has(k);nowSeen.add(k);return `<span class="card back ${n?'deal':''}"></span>`;}
  const k=key+c,n=!seen.has(k);nowSeen.add(k);const r=c[0]==='T'?'10':c[0],s=SY[c[1]];
- return `<span class="card ${c[1]==='h'?'r':c[1]==='d'?'d':c[1]==='c'?'c':''} ${hl?'hl':''} ${n?(seen.has('b'+key)?'flip':'deal'):''}"><span class="ix">${r}<i>${s}</i></span><span class="pip">${s}</span><span class="ix b">${r}<i>${s}</i></span></span>`;}
+ return `<span class="card ${c[1]==='h'||c[1]==='d'?'r':'k'} ${hl?'hl':''} ${n?(seen.has('b'+key)?'flip':'deal'):''}"><span class="ix">${r}<i>${s}</i></span><span class="pip">${s}</span><span class="ix b">${r}<i>${s}</i></span></span>`;}
 const VN={holdem:"Texas Hold'em",omaha:'Omaha Pot-Limit'};const AV=['#ff3ea5','#ffb020','#22c7ff','#5fdc4a','#a06bff','#ff6a3d'];
 const DEN=[1500,200,100];function chips(a){if(!a)return'';let r=a,h='';for(const d of DEN){let n=Math.floor(r/d);r-=n*d;if(n){n=Math.min(n,8);let c='';for(let i=0;i<n;i++)c+=`<span class="ch c${d}" style="bottom:${i*4}px"></span>`;h+=`<span class="col" style="height:${12+n*4}px">${c}</span>`;}}return '<span class="stk">'+h+'</span>';}
 let build=0,lastPending=null;
