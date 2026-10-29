@@ -1,7 +1,7 @@
 # Table de poker entre amis (jetons virtuels, 6 places max)
 Modes : Texas Hold'em No-Limit, Omaha Pot-Limit, ou « Choix du donneur » (le bouton choisit avant chaque main, 20 s, sinon variante précédente).
 Réglages (engine.js → CONFIG) : pile 5 000, recave au choix +1 000 à +5 000 (par 1 000), 6 sièges, blindes 100/200, unité 100.
-Jetons 1 500 (violet) / 200 (bleu) / 100 (blanc), monnaie rendue automatiquement ; mise en touchant les jetons ou avec le curseur.
+Jetons 1 000 (violet) / 500 (vert) / 200 (bleu) / 100 (rouge), monnaie rendue automatiquement ; mise en touchant les jetons ou avec le curseur.
 
 ## Lancer / redémarrer
     ./start.sh        # superviseur (relance auto si crash) + tunnel cloudflared, affiche l'URL (url.txt)
