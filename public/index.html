@@ -124,6 +124,13 @@ h3{font-family:Bungee;margin:0 0 10px;color:#ffe27a}
 @media(max-width:1100px){.invlogo{left:auto;right:4px;top:-72px;width:48px!important}.invlogo span{font-size:8px;padding:1px 6px}}
 @media (orientation:landscape) and (max-height:900px) and (pointer:coarse),(orientation:landscape) and (max-height:600px){.invlogo{position:fixed;width:52px!important;left:8px;right:auto;top:calc(var(--th) + 10px);bottom:auto}}
 @media (orientation:landscape) and (max-height:600px){.invlogo span{font-size:8px;padding:1px 6px}}
+/* mobile portrait (navigateurs intégrés Grok/X/Instagram…) : rien sous la barre flottante du haut ni sous la barre du bas */
+@media (orientation:portrait) and (pointer:coarse),(max-width:600px) and (orientation:portrait){
+ #game{padding-top:calc(max(env(safe-area-inset-top),0px) + 92px);padding-bottom:calc(var(--barh,190px) + 130px)}
+ #lobby{padding-top:calc(max(env(safe-area-inset-top),0px) + 92px);padding-bottom:140px}
+ #bar{bottom:var(--vvb,0px)}
+}
+@media (display-mode:standalone){#game{padding-top:calc(env(safe-area-inset-top) + 6px)}#lobby{padding-top:calc(env(safe-area-inset-top) + 36px)}}
 /* paysage mobile/tablette : tout tient dans l'écran, barre d'actions à droite */
 @media (orientation:landscape) and (max-height:600px), (orientation:landscape) and (max-height:900px) and (pointer:coarse){
  :root{--bw:clamp(200px,24vw,280px);--th:44px}
@@ -242,4 +249,4 @@ function act(a,v){sock.emit('act',{action:a,amount:v});}
 addEventListener('resize',()=>S&&render());
 setInterval(()=>{const e=$('cd');if(e&&S)e.textContent='('+Math.max(0,Math.ceil((S.choiceDeadline-Date.now())/1000))+' s)';
  const t=document.querySelector('.timer');if(t&&S){const f=Math.min(1,(Date.now()-S.turnStart)/30000),col=f<.6?'#7dff6a':f<.85?'#ffc83d':'#ff3e5e';t.style.background=`conic-gradient(${col} ${360*(1-f)}deg,#ffffff22 0)`;}},250);
-</script><script>document.addEventListener('click',e=>{const a=e.target.closest('a.tlink');if(!a)return;const g=document.getElementById('game');if(g&&g.offsetParent!==null){e.preventDefault();window.open(a.href,'_blank','noopener');}});</script></body></html>
+</script><script>document.addEventListener('click',e=>{const a=e.target.closest('a.tlink');if(!a)return;const g=document.getElementById('game');if(g&&g.offsetParent!==null){e.preventDefault();window.open(a.href,'_blank','noopener');}});</script><script>(function(){const vv=window.visualViewport,r=document.documentElement;function f(){if(vv){const b=Math.max(0,innerHeight-vv.height-vv.offsetTop);r.style.setProperty('--vvb',Math.round(b)+'px');}const bar=document.getElementById('bar');if(bar)r.style.setProperty('--barh',bar.offsetHeight+'px');}if(vv){vv.addEventListener('resize',f);vv.addEventListener('scroll',f);}addEventListener('resize',f);setInterval(f,1500);f();})();</script></body></html>
