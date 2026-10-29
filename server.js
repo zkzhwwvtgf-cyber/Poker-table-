@@ -14,7 +14,7 @@ io.on('connection',sock=>{let room=null,tok=null;
   sock.on('start',g(()=>{if(room.host===tok||room.t.stage==='showdown')room.t.startHand();}));
   sock.on('choose',g(v=>room.t.chooseVariant(tok,v)));
   sock.on('act',g(({action,amount})=>room.t.act(tok,action,amount)));
-  sock.on('settings',g(({mode,sb,bb})=>{if(room.host!==tok)return;const t=room.t;if(mode)t.setMode(mode);if(!['waiting','showdown'].includes(t.stage))return;if(!sb&&!bb)return;if(+sb&&sb%100===0)t.sb=+sb;if(+bb&&bb%100===0)t.bb=+bb;t.log.push('Réglages : '+({holdem:"Hold'em",omaha:'Omaha PL',dealer:'Choix du donneur'})[t.mode]+' '+t.sb+'/'+t.bb);}));
+  sock.on('settings',g(({mode,sb,bb})=>{if(room.host!==tok)return;const t=room.t;if(mode)t.setMode(mode);if(!['waiting','showdown'].includes(t.stage))return;if(!sb&&!bb)return;if(+sb&&sb%100===0)t.sb=+sb;if(+bb&&bb%100===0)t.bb=+bb;t.log.push('Réglages : '+({holdem:"Hold'em",omaha:'Omaha PL',omahanl:'Omaha NL',dealer:'Choix du donneur'})[t.mode]+' '+t.sb+'/'+t.bb);}));
   sock.on('reset',g(()=>{if(room.host===tok){room.t.fullReset();io.to('r'+room.code).emit('toast','Table réinitialisée : tout le monde repart à 5 000');}}));
   sock.on('rebuy',g(amount=>room.t.rebuy(tok,amount===undefined?1000:amount)));
   sock.on('disconnect',()=>{if(!room)return;delete room.sockets[sock.id];if(!Object.values(room.sockets).includes(tok)){room.t.removePlayer(tok);if(room.host===tok){const n=room.t.seats.find(x=>x);if(n){room.host=n.id;room.t.log.push(n.name+' devient hôte');}}}

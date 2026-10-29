@@ -9,6 +9,11 @@ t('Omaha: exactement 2 cartes (pas de quinte avec 1)',()=>a.notEqual(H('9c 2d 2h
 t('Omaha: couleur avec 2 cartes',()=>a.equal(H('As Ks 2d 3c','2s 7s 9s Jh Qd','omaha').name,'Couleur'));
 t('side pots',()=>{const p=sidePots([{id:1,amount:100},{id:2,amount:500},{id:3,amount:500},{id:4,amount:300,folded:true}]);
   a.deepEqual(p,[{amount:400,eligible:[1,2,3]},{amount:1000,eligible:[2,3]}]);});
+t('Omaha NL: évaluation Omaha (exactement 2 cartes)',()=>{a.notEqual(H('As Ks Qs Js','2s 7s 9h 3d 4c','omahanl').name,'Couleur');a.equal(H('As Ks 2d 3c','2s 7s 9s Jh Qd','omahanl').name,'Couleur');});
+t('Omaha NL: 4 cartes et relance jusqu\'au tapis',()=>{const T=new Table({mode:'omahanl'});T.addPlayer('a','A');T.addPlayer('b','B');T.addPlayer('c','C');T.startHand();a.equal(T.variant,'omahanl');a.equal(T.hand.pl[0].hole.length,4);
+ const p=T.seats[T.toAct],L=T.limits(T.toAct);a(L.maxTo>T.potTotal()*2,'maxTo dépasse le pot');a.equal(L.maxTo,T.hand.pl[T.toAct].bet+p.chips);
+ const P=new Table({mode:'omaha'});P.addPlayer('a','A');P.addPlayer('b','B');P.addPlayer('c','C');P.startHand();a(P.limits(P.toAct).maxTo<L.maxTo,'PL plafonné');});
+t('Omaha NL: setMode / choix du donneur',()=>{const T=new Table({mode:'dealer',choiceTimeout:50});T.addPlayer('a','A');T.addPlayer('b','B');T.startHand();a(T.chooseVariant(T.seats[T.chooser].id,'omahanl'));a.equal(T.variant,'omahanl');a.equal(T.hand.pl[0].hole.length,4);clearTimeout(T.timer);a.equal(new Table({}).setMode('omahanl'),true);});
 function sim(mode){const T=new Table({mode,choiceTimeout:50});T.addPlayer('a','A');T.addPlayer('b','B');T.addPlayer('c','C');return T;}
 t('main complète, jetons conservés',()=>{const T=sim('holdem');T.startHand();let g=0;while(T.stage!=='showdown'&&g++<50){const id=T.seats[T.toAct].id,L=T.limits(T.toAct);T.act(id,L.toCall?'call':'check');}
   a.equal(T.stage,'showdown');a.equal(T.seats.reduce((s,x)=>s+(x?x.chips:0),0),15000);});

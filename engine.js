@@ -1,4 +1,4 @@
-// Moteur de poker : évaluation, pots, déroulement d'une main (Hold'em / PLO)
+// Moteur de poker : évaluation, pots, déroulement d'une main (Hold'em / PLO / Omaha NL)
 const CONFIG={STACK:5000,REBUY:1000,REBUY_OPTIONS:[1000,2000,3000,4000,5000],SEATS:6,UNIT:100,SB:100,BB:200};
 const RANKS='23456789TJQKA', SUITS='shdc';
 function newDeck(){const d=[];for(const r of RANKS)for(const s of SUITS)d.push(r+s);for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}return d;}
@@ -22,8 +22,9 @@ function eval5(cs){
 const cmp=(a,b)=>{for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]||0)-(b[i]||0);if(d)return d;}return 0;};
 function combos(a,k){const r=[];(function f(s,c){if(c.length===k){r.push(c.slice());return;}for(let i=s;i<a.length;i++){c.push(a[i]);f(i+1,c);c.pop();}})(0,[]);return r;}
 function bestOf(list){let b=null;for(const c of list){const e=eval5(c);if(!b||cmp(e.score,b.score)>0)b=e;}return b;}
+const isOmaha=v=>v==='omaha'||v==='omahanl';
 function bestHand(hole,board,variant){
-  if(variant==='omaha'){const l=[];for(const h of combos(hole,2))for(const bd of combos(board,3))l.push([...h,...bd]);return bestOf(l);}
+  if(isOmaha(variant)){const l=[];for(const h of combos(hole,2))for(const bd of combos(board,3))l.push([...h,...bd]);return bestOf(l);}
   return bestOf(combos([...hole,...board],5));
 }
 // contribs: [{id,amount,folded}] -> [{amount,eligible:[ids]}]
@@ -40,12 +41,12 @@ function sidePots(contribs){
 
 class Table{
   constructor(o={}){this.seats=Array(CONFIG.SEATS).fill(null);this.sb=o.sb||CONFIG.SB;this.bb=o.bb||CONFIG.BB;this.mode=o.mode||'holdem';
-    this.variant=this.mode==='omaha'?'omaha':'holdem';this.button=-1;this.hand=null;this.stage='waiting';this.log=[];this.choiceTimeout=o.choiceTimeout||20000;this.onChange=()=>{};this.timer=null;}
+    this.variant=isOmaha(this.mode)?this.mode:'holdem';this.button=-1;this.hand=null;this.stage='waiting';this.log=[];this.choiceTimeout=o.choiceTimeout||20000;this.onChange=()=>{};this.timer=null;}
   addPlayer(id,name,chips=CONFIG.STACK){let i=this.seats.findIndex(s=>!s);if(i<0)return -1;this.seats[i]={id,name,chips,connected:true,sitOut:false,rebuys:0,rebuyTotal:0,engaged:chips};return i;}
   seatOf(id){return this.seats.findIndex(s=>s&&s.id===id);}
   next(i,pred){const N=this.seats.length;for(let k=1;k<=N;k++){const j=(i+k)%N;if(this.seats[j]&&pred(this.seats[j],j))return j;}return -1;}
   ready(){return this.seats.filter(s=>s&&s.chips>0&&!s.sitOut);}
-  setMode(m){if(!['holdem','omaha','dealer'].includes(m))return false;const NM={holdem:"Hold'em",omaha:'Omaha',dealer:'Choix du donneur'};
+  setMode(m){if(!['holdem','omaha','omahanl','dealer'].includes(m))return false;const NM={holdem:"Hold'em",omaha:'Omaha PL',omahanl:'Omaha NL',dealer:'Choix du donneur'};
     if(this.stage==='waiting'||this.stage==='showdown'){this.mode=m;this.pendingMode=null;if(m!=='dealer')this.variant=m;this.log.push('Variante : '+NM[m]+(this.stage==='waiting'?'':' à partir de la prochaine main'));}
     else{this.pendingMode=m;this.log.push('Variante : '+NM[m]+' à partir de la prochaine main');}return true;}
   startHand(){
@@ -58,12 +59,12 @@ class Table{
       const prev=this.variant||'holdem';
       const ch=this.seats[this.button];if(!ch.connected){this.chooseVariant(ch.id,prev,true);return true;}
       this.timer=setTimeout(()=>{if(this.stage==='choosing'){this.chooseVariant(this.seats[this.chooser].id,prev,true);this.onChange();}},this.choiceTimeout);return true;}
-    this.variant=this.mode==='omaha'?'omaha':'holdem';this.deal();return true;
+    this.variant=isOmaha(this.mode)?this.mode:'holdem';this.deal();return true;
   }
-  chooseVariant(id,v,auto){if(this.stage!=='choosing'||this.seats[this.chooser]?.id!==id)return false;if(!['holdem','omaha'].includes(v))return false;
-    clearTimeout(this.timer);this.variant=v;this.log.push((auto?'(délai) ':'')+this.seats[this.chooser].name+' choisit '+(v==='omaha'?'Omaha':"Hold'em"));this.deal();return true;}
+  chooseVariant(id,v,auto){if(this.stage!=='choosing'||this.seats[this.chooser]?.id!==id)return false;if(!['holdem','omaha','omahanl'].includes(v))return false;
+    clearTimeout(this.timer);this.variant=v;this.log.push((auto?'(délai) ':'')+this.seats[this.chooser].name+' choisit '+({omaha:'Omaha PL',omahanl:'Omaha NL'}[v]||"Hold'em"));this.deal();return true;}
   deal(){
-    const n=this.variant==='omaha'?4:2,deck=newDeck();
+    const n=isOmaha(this.variant)?4:2,deck=newDeck();
     const pl={};this.seats.forEach((s,i)=>{if(s&&s.chips>0&&!s.sitOut)pl[i]={hole:[],bet:0,total:0,folded:false,allin:false,acted:false};});
     for(let r=0;r<n;r++)for(const i in pl)pl[i].hole.push(deck.pop());
     this.hand={deck,board:[],pl,currentBet:0,minRaise:this.bb,results:null};this.stage='preflop';
@@ -137,4 +138,4 @@ class Table{
         hole:h&&h.pl[i]?(i===me?h.pl[i].hole:(h.shown&&h.shown[i]&&this.stage==='showdown'?h.shown[i].hole:h.pl[i].hole.map(()=>'??'))):[],
         handName:h&&h.shown&&h.shown[i]?h.shown[i].name:null})};}
 }
-module.exports={CONFIG,eval5,bestHand,sidePots,Table,cmp};
+module.exports={isOmaha,CONFIG,eval5,bestHand,sidePots,Table,cmp};
