@@ -1,7 +1,7 @@
 <!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>Steph&#39;s Table — Poker entre amis</title><meta name="theme-color" content="#120626"><!--OG-->
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#120626"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Steph's Table">
-<link rel="preload" href="/fonts/inter.woff2?v=3" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/bungee.woff2?v=3" as="font" type="font/woff2" crossorigin><style>@font-face{font-family:'Great Vibes';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/greatvibes.woff2?v=1) format('woff2')}@font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;src:url(/fonts/inter.woff2?v=3) format("woff2")}@font-face{font-family:Bungee;font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/bungee.woff2?v=3) format("woff2")}</style>
+<link rel="preload" href="/fonts/inter.woff2?v=3" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/bungee.woff2?v=3" as="font" type="font/woff2" crossorigin><style>@font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;src:url(/fonts/inter.woff2?v=3) format("woff2")}@font-face{font-family:Bungee;font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/bungee.woff2?v=3) format("woff2")}</style>
 <style>
 :root{--neon:#ff3ea5;--cyan:#22e4ff;--gold:#ffc83d;--lime:#7dff6a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -45,8 +45,8 @@ button.red{background:linear-gradient(180deg,#ff6a6a,#c81e1e);color:#fff;box-sha
 .felt::after{content:'';position:absolute;left:-30%;top:-60%;width:160%;height:120%;background:radial-gradient(ellipse,#ffffff26,transparent 60%);pointer-events:none}
 .ring{position:absolute;inset:14%;border-radius:999px;border:2px dashed #ffe27a55}
 .feltlogo{position:absolute;left:50%;top:74%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none;opacity:.42;white-space:nowrap;line-height:1}
-.feltlogo .fl{line-height:.95;font-family:'Great Vibes',cursive;font-size:clamp(26px,6.4vw,58px);padding:0 .15em .08em;background:linear-gradient(180deg,#fff3c4 0%,#f4cf6a 38%,#c8962e 62%,#fbe7a1 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 1px 0 #0009) drop-shadow(0 0 6px #0006)}
-.feltlogo .fs{display:flex;align-items:center;gap:.5em;margin-top:-.1em;font:700 clamp(8px,1.5vw,13px) "DejaVu Sans",Arial,sans-serif;color:#e9c46a;letter-spacing:.2em}.feltlogo .fs::before,.feltlogo .fs::after{content:"";width:clamp(18px,5vw,46px);height:1px;background:linear-gradient(90deg,transparent,#e9c46a)}.feltlogo .fs::after{transform:scaleX(-1)}
+
+
 .center{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);text-align:center;width:62%;z-index:3}
 .badge{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:900;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#1a0630;background:linear-gradient(90deg,#ffe27a,#ff9de0,#8ff3ff);box-shadow:0 0 16px #ff3ea588}
 .badge.wait{background:#0009;color:#ffe27a;border:1px solid #ffe27a88;box-shadow:none;animation:pulse 1.2s infinite}
@@ -164,7 +164,7 @@ h3{font-family:Bungee;margin:0 0 10px;color:#ffe27a}
 .vtag{position:absolute;left:-6px;top:-8px;font-size:13px;line-height:1;background:#120626;border-radius:50%;padding:2px;box-shadow:0 0 0 1px #7dff6a88;z-index:3}.vtag.m{box-shadow:0 0 0 1px #ff6a7f88}.vtag.f{box-shadow:0 0 0 1px #ffc83d}
 .vaudio{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
 /* lot 3 */
-.card.back{background:#171126 url(/logo-cut-96.webp?v=3) center/72% auto no-repeat;border:2px solid #3b2f57;box-shadow:inset 0 0 0 2px #0c0817,inset 0 0 0 3px #ffc83d40,0 3px 8px #0008}.card.back::after{content:none}
+.card.back{background:#0b3a22 url(/brand-160.webp?v=1) center/86% auto no-repeat;border:2px solid #3b2f57;box-shadow:inset 0 0 0 2px #0c0817,inset 0 0 0 3px #ffc83d40,0 3px 8px #0008}.card.back::after{content:none}
 .av .avemo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:1.25em;line-height:1}.av .avimg{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
 .avgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;margin:4px 0 8px}.avgrid button{margin:0;padding:0;height:44px;min-width:0;font-size:22px;border-radius:12px;background:#ffffff12;border:2px solid transparent;box-shadow:none;display:grid;place-items:center}
 .avgrid button.on{border-color:#ffc83d;background:#ffc83d33}.avgrid img{width:36px;height:36px;border-radius:50%;object-fit:cover}.avgrid b{font-family:Bungee;font-size:18px}
@@ -237,7 +237,7 @@ html.rm .fly,html.rm .bub{display:none}
  :root{--bw:clamp(170px,20vw,240px);--th:46px}
  body{min-height:0;height:100dvh;overflow:hidden}
  #game{padding:4px calc(var(--bw) + 6px) 0 6px;height:100dvh;overflow:hidden}
- .top{flex-wrap:nowrap;max-width:none;width:100%;min-height:var(--th);gap:4px}#gsel{margin-left:auto}.feltlogo{opacity:.55}.feltlogo .fs{display:none}.dcwait .gi{display:none}.dcwait{max-width:84px;font-size:11px;padding:4px 8px}.gmini .gi{display:none}.gmini{padding:0}
+ .top{flex-wrap:nowrap;max-width:none;width:100%;min-height:var(--th);gap:4px}#gsel{margin-left:auto}.feltlogo{opacity:.55}.dcwait .gi{display:none}.dcwait{max-width:84px;font-size:11px;padding:4px 8px}.gmini .gi{display:none}.gmini{padding:0}
  .top .brand img.hlogo{height:30px;width:30px}.top .jbadge .tile{width:28px;height:28px}.top .wordmark{font-size:15px;white-space:nowrap}#code{font-size:10px;white-space:nowrap}.top .brand{gap:6px;min-width:36px;flex:1 1 auto;overflow:hidden;justify-content:flex-start}.tools{flex-shrink:0}
  .tools{flex-wrap:nowrap;gap:4px}.tools button,.tools select{white-space:nowrap;max-width:120px;padding:5px 7px;font-size:11px;border-radius:10px;box-shadow:0 3px 0 #0006}
  .tablewrap{aspect-ratio:auto;width:auto;max-width:min(100%,calc((100dvh - var(--th)) * 2.3));height:calc(100dvh - var(--th) - 44px - env(safe-area-inset-bottom));margin:6px auto 0 62px}
@@ -277,17 +277,40 @@ html.rm .fly,html.rm .bub{display:none}
 #muteBtn{top:auto;bottom:4px;right:48px}#vbox{top:auto;bottom:4px;right:92px;flex-direction:row-reverse}
 @media (orientation:landscape) and (max-height:600px) and (max-width:700px){.seat{width:118px}.av{flex-basis:32px;height:32px;font-size:15px}.info b{font-size:12px;max-width:66px}.info span,.info .chn{font-size:14px}.plate{padding:2px 8px 2px 2px}}
 @media (orientation:portrait) and (max-width:600px) and (max-height:700px){.av{flex-basis:34px;width:34px;height:34px;font-size:15px}.info b{font-size:12px}.info span,.info .chn{font-size:14px}.seat{width:84px}}
+
+/* logo du tapis */
+.feltlogo{position:absolute;left:50%;top:70%;height:30%;transform:translate(-50%,-50%);display:block;opacity:.95;pointer-events:none;z-index:0}
+.feltlogo .fl{display:block;height:100%;width:auto;filter:drop-shadow(0 4px 10px #0007)}
+.feltlogo.under{opacity:.36}.feltlogo.under.solo{opacity:.92}
+/* parquet */
+body{background:#1a0f08}
+body::before{animation:none!important;inset:0;background:radial-gradient(ellipse at 50% 42%,#0000 25%,#0006 70%,#000c 100%),url(/parquet.webp?v=1) 0 0/192px 192px repeat,#24150b}
+/* tapis : grain + spot */
+.felt{background:radial-gradient(ellipse 70% 60% at 50% 42%,#33e894 0%,#14a862 28%,#0a7a42 58%,#054826 82%,#032a16 100%);box-shadow:inset 0 0 60px 16px #000b,inset 0 2px 0 #ffffff14}
+.felt::before{opacity:.32;background-size:120px 120px}
+.felt::after{left:-10%;top:-35%;width:120%;height:110%;background:radial-gradient(ellipse at 50% 45%,#ffffff2e,#ffffff0c 45%,transparent 65%)}
+/* rail cuir + liseré or */
+.rail{background:radial-gradient(ellipse 60% 26% at 50% 6%,#ffffff2a,transparent 70%),linear-gradient(180deg,#5a2e17 0%,#3a1b0c 35%,#24100a 70%,#140704 100%);
+ box-shadow:0 0 0 2px #f6d27a,0 0 0 3px #8a5d17,0 0 18px #ffc83d55,0 0 0 9px #140704,0 0 0 11px var(--neon),0 0 40px #ff3ea566,0 26px 60px #000e,inset 0 2px 1px #ffffff26,inset 0 -6px 12px #0009}
+/* ombres + reflet cartes */
+.card:not(.back){box-shadow:0 3px 6px #0007,0 1px 1px #0005;background-image:linear-gradient(155deg,#ffffff 0%,#ffffff 45%,#eef0f3 100%)}
+.card:not(.back)::before{content:none}
+.plate{box-shadow:0 8px 18px #000b,0 2px 4px #0008,inset 0 1px 0 #ffffff1f}
+.pot,.bet{box-shadow:0 3px 8px #0009}
+#lobby .brand img.hlogo{width:min(84vw,380px);height:auto;border-radius:0;box-shadow:none;object-fit:contain;filter:drop-shadow(0 8px 18px #000c)}
+.jbadge .tile{background:radial-gradient(circle,#11643a,#06301b)}.jbadge .tile img{object-fit:contain;padding:2px;box-sizing:border-box}
+.top .brand{justify-content:flex-start}
 </style></head><body>
 <div id="toast"></div>
-<div id="lobby"><div class="brand"><a class="tlink" href="https://poker-stephane.onrender.com" target="_self" aria-label="Steph&#39;s Table — accueil"><img class="hlogo" src="/logo-320.webp?v=3" alt="Steph&#39;s Table" width="320" height="320" fetchpriority="high" onerror="this.onerror=null;this.src='/logo.png'"></a><div class="wordmark rainbow" id="wm"></div><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div><div class="tagline">♠ ♥ Poker entre amis ♣ ♦</div>
+<div id="lobby"><div class="brand"><a class="tlink" href="https://poker-stephane.onrender.com" target="_self" aria-label="Steph&#39;s Table — accueil"><img class="hlogo" src="/brand-800.webp?v=1" alt="Steph&#39;s Table" width="800" height="447" fetchpriority="high"></a><div class="wordmark rainbow" id="wm"></div><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/brand-160.webp?v=1" loading="lazy" width="160" height="89" alt="Steph&#39;s Table"></span><span class="cap">Steph&#39;s Table</span></a></div><div class="tagline">♠ ♥ Poker entre amis ♣ ♦</div>
 <div class="panel"><p style="text-align:center;margin:0 0 6px;color:#ffd9f0;font-size:14px">Jetons virtuels · 5 000 par joueur · 6 places</p>
 <label>Ton pseudo</label><input id="name" placeholder="ex. Stéphane" maxlength="14"><label>Ton avatar</label><div id="avgrid" class="avgrid"></div><label class="phbtn">📷 Ma photo<input type="file" accept="image/*" id="phin" hidden onchange="pickPhoto(this)"></label><div id="createBox">
 <label>Jeu</label><input type="hidden" id="mode" value="holdem"><div class="vseg lob" id="lobseg"><button type="button" class="on" onclick="lobMode('holdem')">Hold'em</button><button type="button" onclick="lobMode('omaha')">Omaha</button></div>
 <label>Blindes</label><div class="row"><input id="sb" type="number" value="100" step="100"><input id="bb" type="number" value="200" step="200"></div>
-<button class="pink" onclick="create()">Créer la table 🎉</button></div><button id="joinBtn" class="pink" onclick="join()" style="display:none">Rejoindre la table 🎉</button><p id="err" style="color:#ff8aa0;text-align:center;font-weight:700"></p></div><div class="loc">Neuilly-sur-Seine<br><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div></div>
-<div id="game"><div class="top"><div class="brand"><a class="tlink" href="https://poker-stephane.onrender.com" target="_self" aria-label="Steph&#39;s Table — accueil"><img class="hlogo" src="/logo-128.webp?v=3" alt="Steph&#39;s Table" width="128" height="128" loading="lazy" onerror="this.onerror=null;this.src='/logo.png'"></a><div><div class="wordmark rainbow" id="wm2"></div><div id="code"></div></div><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div>
+<button class="pink" onclick="create()">Créer la table 🎉</button></div><button id="joinBtn" class="pink" onclick="join()" style="display:none">Rejoindre la table 🎉</button><p id="err" style="color:#ff8aa0;text-align:center;font-weight:700"></p></div><div class="loc">Neuilly-sur-Seine<br><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/brand-160.webp?v=1" loading="lazy" width="160" height="89" alt="Steph&#39;s Table"></span><span class="cap">Steph&#39;s Table</span></a></div></div>
+<div id="game"><div class="top"><div class="brand"><div><div id="code"></div></div><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/brand-160.webp?v=1" loading="lazy" width="160" height="89" alt="Steph&#39;s Table"></span><span class="cap">Steph&#39;s Table</span></a></div>
 <div id="gsel"></div><div class="tools"><button id="menuBtn" class="alt" onclick="openMenu()" aria-label="Menu de la table">⚙️ Menu</button></div></div>
-<div class="tablewrap" id="tw"><div class="rail"></div><div class="felt"><div class="ring"></div><div class="feltlogo" aria-hidden="true"><span class="fl">Steph&#39;s Table</span><span class="fs">♠&#xFE0E; ♥&#xFE0E; ♦&#xFE0E; ♣&#xFE0E;</span></div></div><div class="center"><div id="badge"></div><div id="board"></div><div class="pot" id="pot"></div><div id="res"></div></div><div id="seats"></div><div id="vbox"><button type="button" id="micBtn" class="tbtn" onclick="micTap()" aria-label="Vocal">🎤</button><button type="button" id="vLeave" class="tbtn" onclick="vLeave()" aria-label="Quitter le vocal">📴</button></div><button type="button" id="muteBtn" class="tbtn" onclick="setMute(!MUTE)" aria-label="Son">🔊</button><button type="button" id="rxBtn" class="tbtn" onclick="$('rxbar').classList.toggle('open')" aria-label="Réactions">😊</button><div id="rxbar"><button type="button" onclick="react('😂')">😂</button><button type="button" onclick="react('😱')">😱</button><button type="button" onclick="react('👏')">👏</button><button type="button" onclick="react('🍀')">🍀</button><button type="button" onclick="react('🔥')">🔥</button><button type="button" onclick="react('😎')">😎</button></div><button type="button" id="invBtn" class="invlogo" onclick="shareInvite()" aria-label="Inviter des amis à cette table" title="Inviter à la table"><img src="/logo-cut.webp?v=3" loading="lazy" alt="" onerror="this.onerror=null;this.src='/logo-cut.png'"><span>✉ Inviter</span></button></div><div class="loc">Neuilly-sur-Seine<br><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div>
+<div class="tablewrap" id="tw"><div class="rail"></div><div class="felt"><div class="ring"></div><div class="feltlogo" aria-hidden="true"><img class="fl" src="/brand-800.webp?v=1" alt="" width="800" height="447" decoding="async"></div></div><div class="center"><div id="badge"></div><div id="board"></div><div class="pot" id="pot"></div><div id="res"></div></div><div id="seats"></div><div id="vbox"><button type="button" id="micBtn" class="tbtn" onclick="micTap()" aria-label="Vocal">🎤</button><button type="button" id="vLeave" class="tbtn" onclick="vLeave()" aria-label="Quitter le vocal">📴</button></div><button type="button" id="muteBtn" class="tbtn" onclick="setMute(!MUTE)" aria-label="Son">🔊</button><button type="button" id="rxBtn" class="tbtn" onclick="$('rxbar').classList.toggle('open')" aria-label="Réactions">😊</button><div id="rxbar"><button type="button" onclick="react('😂')">😂</button><button type="button" onclick="react('😱')">😱</button><button type="button" onclick="react('👏')">👏</button><button type="button" onclick="react('🍀')">🍀</button><button type="button" onclick="react('🔥')">🔥</button><button type="button" onclick="react('😎')">😎</button></div><button type="button" id="invBtn" class="invlogo" onclick="shareInvite()" aria-label="Inviter des amis à cette table" title="Inviter à la table"><img src="/brand-160.webp?v=1" loading="lazy" width="160" height="89" alt=""><span>✉ Inviter</span></button></div><div class="loc">Neuilly-sur-Seine<br><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/brand-160.webp?v=1" loading="lazy" width="160" height="89" alt="Steph&#39;s Table"></span><span class="cap">Steph&#39;s Table</span></a></div>
 <div id="bar"><div id="turnban">À toi ! 🎯</div><div id="prompt"></div><div id="actions"></div><div id="log"></div></div></div>
 <div class="modal" id="menu" onclick="if(event.target===this)this.style.display='none'"><div class="panel menu"><h3>Menu de la table</h3>
 <div id="hostbar"><button onclick="closeMenu();openInvite()">📱 Inviter par SMS</button><button class="alt" onclick="closeMenu();copyLink()">🔗 Copier le lien</button><button class="alt" onclick="closeMenu();share()">📤 Partager</button>
@@ -303,7 +326,7 @@ html.rm .fly,html.rm .bub{display:none}
 const $=id=>document.getElementById(id);
 // Sessions propres : jeton neuf à chaque ouverture, aucune restauration de siège
 const token=localStorage.pkTok||(localStorage.pkTok=Math.random().toString(36).slice(2)+Date.now());
-['wm','wm2'].forEach(id=>$(id).innerHTML=[...'Steph\'s Table'].map((c,i)=>`<span style="animation-delay:${i*.08}s">${c===' '?'&nbsp;':c}</span>`).join(''));
+['wm'].forEach(id=>$(id)&&($(id).innerHTML=[...'Steph\'s Table'].map((c,i)=>`<span style="animation-delay:${i*.08}s">${c===' '?'&nbsp;':c}</span>`).join('')));
 if(localStorage.pkRM==='1'||(localStorage.pkRM!=='0'&&matchMedia('(prefers-reduced-motion: reduce)').matches))document.documentElement.classList.add('rm');
 function openMenu(){$('vMenu').textContent=VOICE.on?'📴 Quitter le vocal':'🎤 Rejoindre le vocal';$('rmbox').checked=RM();$('mutebox').checked=MUTE;$('menu').style.display='flex';}
 setTimeout(()=>{vUI();drawAv();setMute(MUTE);$('name').addEventListener('input',drawAv);},0);
@@ -404,13 +427,14 @@ function render(){const s=S,me=s.me;nowSeen=new Set();$('code').textContent='Tab
  fitMine();fitLogo();$('turnban').style.display=(me>=0&&s.toAct===me&&s.limits)?'block':'none';
  $('log').innerHTML=(s.lastAction?'<div class="last">'+s.lastAction+'</div>':'')+'<div class="hist">'+s.log.slice(-4).reverse().filter(x=>x!==s.lastAction).slice(0,3).join(' · ')+'</div>';}
 // mes cartes toujours visibles au-dessus de la barre d'actions (portrait)
-function fitLogo(){requestAnimationFrame(()=>requestAnimationFrame(()=>{const L=document.querySelector('.feltlogo'),F=document.querySelector('.felt');if(!L||!F)return;const fr=F.getBoundingClientRect(),cx=fr.left+fr.width/2;
- const vis=e=>{const r=e.getBoundingClientRect();return r.width&&r.height?r:null};let top=fr.top+fr.height*.55,bot=fr.bottom-10;
+function fitLogo(){requestAnimationFrame(()=>requestAnimationFrame(()=>{const L=document.querySelector('.feltlogo'),F=document.querySelector('.felt');if(!L||!F)return;const fr=F.getBoundingClientRect(),cx=fr.left+fr.width/2,AR=800/447;
+ const vis=e=>{const r=e.getBoundingClientRect();return r.width&&r.height?r:null};let top=fr.top+fr.height*.5,bot=fr.bottom-8;
  for(const e of document.querySelectorAll('#board,#pot,#res,#badge')){const r=vis(e);if(r)top=Math.max(top,r.bottom);}
- const obs=[...document.querySelectorAll('.seat .cards,.seat .plate,.bet')].map(vis).filter(r=>r&&r.bottom>top);const fl=L.querySelector('.fl'),sx=L.querySelector('.fs');
- L.style.display='';const ratio=fl.getBoundingClientRect().width/parseFloat(getComputedStyle(fl).fontSize)||5.5;let fs=Math.min(58,fr.width/8.5),ok=false,withS=false,bt=bot;for(;fs>=16;fs-=2){const hw=fs*ratio/2+4,sh=fs>=26?16:0;bt=bot;for(const r of obs)if(r.right>cx-hw&&r.left<cx+hw)bt=Math.min(bt,r.top);const gap=bt-top-6;if(gap>=fs*1.05+sh){ok=true;withS=sh>0;break;}if(gap>=fs*1.05){ok=true;break;}}
- if(!ok){L.style.display='none';return;}L.style.display='';bot=bt;
- fl.style.fontSize=fs+'px';sx.style.display=withS?'flex':'none';L.style.top=((top+bot)/2-fr.top)+'px';}));}
+ const obs=[...document.querySelectorAll('.seat .cards,.seat .plate,.bet')].map(vis).filter(r=>r&&r.bottom>top);
+ let hgt=Math.min(fr.height*.34,fr.width*.5/AR),bt=bot,ok=false;for(const mn=hgt*.7;hgt>=mn;hgt-=3){const hw=hgt*AR/2+4;bt=bot;for(const r of obs)if(r.right>cx-hw&&r.left<cx+hw)bt=Math.min(bt,r.top);if(bt-top-6>=hgt){ok=true;break;}}
+ const solo=!document.querySelector('#board .card');if(solo)ok=false;L.classList.toggle('under',!ok);L.classList.toggle('solo',solo);
+ if(ok){L.style.height=hgt+'px';L.style.top=((top+bt)/2-fr.top)+'px';}
+ else{const b=vis($('board'))||fr;const hh=Math.min(fr.height*.6,fr.width*(solo?.8:.62)/AR);L.style.height=hh+'px';L.style.top=(b.top+b.height/2-fr.top)+'px';}}));}
 addEventListener('resize',()=>S&&fitLogo());
 function fitMine(){requestAnimationFrame(()=>{const c=document.querySelector('.seat.me .plate')||document.querySelector('.seat.me .cards'),b=$('bar');if(!c||!b)return;const br=b.getBoundingClientRect();if(br.top<10&&br.left>0)return;
  const d=c.getBoundingClientRect().bottom-b.getBoundingClientRect().top+8;if(d>0)scrollBy({top:d,behavior:'smooth'});});}
