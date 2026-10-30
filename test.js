@@ -29,12 +29,6 @@ t('bust → recave → servi à la main suivante (compteur, net, bilan)',()=>{co
   while(T.stage!=='showdown'){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}
   a(T.rebuy('a',2000));const v=T.view('a').seats[0];a.equal(v.chips,2000);a.equal(v.rebuys,1);a.equal(v.rebuyTotal,2000);a.equal(v.engaged,7000);a.equal(v.bilan,-5000);
   T.startHand();a(T.hand.pl[0],'recavé non servi');a.equal(T.view('a').seats[0].hole.length,2);});
-t('choix du donneur suivant : seul lui peut choisir, défaut = jeu précédent',()=>{const T=new Table();T.addPlayer('a','A');T.addPlayer('b','B');T.addPlayer('c','C');
-  a.equal(T.chooseNext('a','omaha'),false,'avant 1re main');T.startHand();const nd=T.nextDealer(),ids=['a','b','c'];a.equal(T.view('a').nextDealer,nd);
-  for(const id of ids)if(id!==ids[nd])a.equal(T.chooseNext(id,'omaha'),false,'accepté pour '+id);a.equal(T.chooseNext(ids[nd],'omahanl'),false);
-  a(T.chooseNext(ids[nd],'omaha'));a(T.log.at(-1).endsWith('choisit : Omaha'));while(T.stage!=='showdown'){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}
-  T.startHand();a.equal(T.button,nd);a.equal(T.variant,'omaha');a.equal(T.hand.pl[0].hole.length,4);
-  while(T.stage!=='showdown'){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}T.startHand();a.equal(T.variant,'omaha','défaut = précédent');});
 for(const [n,gaps] of [[4,[1,4]],[5,[2]],[6,[]]])t(n+' joueurs (sièges vides '+JSON.stringify(gaps)+') : rotation bouton/blindes',()=>{const T=new Table();let k=0;for(let i=0;i<6;i++){if(gaps.includes(i))continue;if(k<n){T.seats[i]={id:'p'+i,name:'P'+i,chips:5000,connected:true,rebuys:0};k++;}}
   const occ=T.seats.map((s,i)=>s?i:-1).filter(i=>i>=0);a.equal(occ.length,n);const btns=[];
   for(let h=0;h<n;h++){T.startHand();btns.push(T.button);a(occ.includes(T.hand.sbI)&&occ.includes(T.hand.bbI));a.equal(T.hand.sbI,occ[(occ.indexOf(T.button)+1)%n]);a.equal(T.hand.bbI,occ[(occ.indexOf(T.button)+2)%n]);
@@ -147,8 +141,8 @@ function serverTest(){const {spawn}=require('child_process'),{io}=require('socke
    const Cx=mk();await w(200);await new Promise(r=>Cx.emit('join',{code,name:'Q',token:'tq'},r));Cx.emit('vsig',{to:B2.id,data:{ice:1}});await w(150);a.equal(got.length,1,'pas en vocal');Cx.close();
    for(let k=0;k<80;k++)A.emit('vsig',{to:B2.id,data:{ice:{k}}});await w(400);a(got.length>=50&&got.length<=61,'débit '+got.length);
    A.emit('vleave');await w(150);a.equal(vl.length,1);O.close();console.log('✓ serveur : vocal — relais même table, taille et débit limités');}
-  {const M=mk();await w(200);const c3=await new Promise(r=>M.emit('create',{name:'M',mode:'omahanl',token:'tm'},x=>r(x.code)));await new Promise(r=>M.emit('join',{code:c3,name:'M',token:'tm'},r));await w(100);a.equal(M.st.mode,'omaha');
-   M.emit('settings',{mode:'dealer'});await w(100);a.equal(M.st.mode,'holdem');M.close();console.log("✓ serveur : jeux proposés Hold'em / Omaha (Omaha NL -> Omaha, donneur -> Hold'em)");}
+  {const M=mk();await w(200);const c3=await new Promise(r=>M.emit('create',{name:'M',mode:'omaha',token:'tm'},x=>r(x.code)));await new Promise(r=>M.emit('join',{code:c3,name:'M',token:'tm'},r));await w(100);a.equal(M.st.mode,'holdem','jeu par défaut : Hold\'em');
+   M.emit('settings',{mode:'omaha'});M.emit('nextgame','omaha');await w(100);a.equal(M.st.mode,'holdem','plus de sélecteur de jeu');M.close();console.log("✓ serveur : pas de sélecteur Hold'em/Omaha, jeu par défaut Hold'em (choix du donneur à chaque donne)");}
   {const X=mk(),Y=mk();await w(200);const c4=await new Promise(r=>X.emit('create',{name:'X',token:'tx4'},x=>r(x.code)));await new Promise(r=>X.emit('join',{code:c4,name:'X',token:'tx4'},r));await new Promise(r=>Y.emit('join',{code:c4,name:'Y',token:'ty4'},r));
    X.emit('start');await w(150);a.equal(X.st.stage,'choosing');const ch=X.st.chooser,C1=ch===X.st.me?X:Y,C2=C1===X?Y:X;C2.emit('choose','omaha');await w(100);a.equal(X.st.stage,'choosing','autre joueur refusé');
    C1.emit('choose','omaha');await w(150);a.equal(C1.st.variant,'omaha');a.equal(C1.st.seats[C1.st.me].hole.length,4);a.equal(C2.st.seats[C2.st.me].hole.length,4);

@@ -3,7 +3,7 @@ const app=express();app.use(require('compression')());const fs=require('fs');con
 const esc=x=>String(x).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const SITE='https://poker-stephane.onrender.com';
 function page(q,r,code){code=code?String(code).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12):'';
- const url=SITE+(code?'/t/'+code:'/'),t="Steph's Table — Tu es invité à la table !",d=(code?'Table '+code+' · ':'')+'Poker entre amis · Hold\'em · Omaha · Neuilly-sur-Seine',img=SITE+'/og-invite.jpg';
+ const url=SITE+(code?'/t/'+code:'/'),t="Steph's Table — Tu es invité à la table !",d=(code?'Table '+code+' · ':'')+'Poker entre amis · Hold\'em · Omaha · Draw · Stud · Neuilly-sur-Seine',img=SITE+'/og-invite.jpg';
  const m=`<meta property="og:type" content="website"><meta property="og:site_name" content="Steph's Table"><meta property="og:title" content="${esc(t)}"><meta property="og:description" content="${esc(d)}"><meta property="og:url" content="${esc(url)}"><meta property="og:image" content="${img}"><meta property="og:image:secure_url" content="${img}"><meta property="og:image:type" content="image/jpeg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Steph's Table — Tu es invité à la table !"><meta property="og:locale" content="fr_FR"><meta name="description" content="${esc(d)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(t)}"><meta name="twitter:description" content="${esc(d)}"><meta name="twitter:image" content="${img}">`;
  r.set('Cache-Control','no-cache');r.type('html').send(IDX.replace('<!--OG-->',m));}
 app.get(['/','/index.html'],(q,r)=>page(q,r));// cache : polices et images longues (1 an, immuables), le reste court ; index.html jamais mis en cache
@@ -14,7 +14,7 @@ const srv=http.createServer(app),io=new Server(srv,{cors:{origin:'*'}});const ro
 const code=()=>crypto.randomBytes(4).toString('hex').slice(0,6).toUpperCase();
 function push(r){for(const [sid,tok] of Object.entries(r.sockets)){const s=io.sockets.sockets.get(sid);if(s)s.emit('state',{...r.t.view(tok),code:r.code,host:r.host===tok});}}
 io.on('connection',sock=>{let room=null,tok=null;
-  sock.on('create',({name,mode,sb,bb,token},cb)=>{mode=uiMode(mode);const c=code();const t=new Table({mode,sb:+sb||CONFIG.SB,bb:+bb||CONFIG.BB,awayDelay:AWAY,dealerChoice:true,choiceTimeout:+process.env.CHOICE_MS||15000});
+  sock.on('create',({name,sb,bb,token},cb)=>{const mode='holdem';const c=code();const t=new Table({mode,sb:+sb||CONFIG.SB,bb:+bb||CONFIG.BB,awayDelay:AWAY,dealerChoice:true,choiceTimeout:+process.env.CHOICE_MS||15000});
     const r=rooms[c]={code:c,t,host:token,sockets:{},grace:{}};t.onChange=()=>push(r);cb&&cb({code:c});});
   sock.on('join',({code:c,name,token,avatar,photo},cb)=>{const r=rooms[(c||'').toUpperCase()];if(!r)return cb&&cb({error:'Table introuvable'});
     room=r;tok=String(token||sock.id);r.toks=r.toks||{};if(token)r.toks[tok]=1;let i=r.t.seatOf(tok);const nm=String(name||'Joueur').slice(0,14);const av=cleanAv(avatar),ph=cleanPh(photo);
@@ -28,7 +28,7 @@ io.on('connection',sock=>{let room=null,tok=null;
   sock.on('start',g(()=>{if(room.host===tok||room.t.stage==='showdown')room.t.startHand();}));
   sock.on('choose',g(v=>room.t.chooseVariant(tok,v)));
   sock.on('act',g(({action,amount})=>room.t.act(tok,action,amount)));
-  sock.on('settings',g(({mode,sb,bb})=>{if(room.host!==tok)return;const t=room.t;if(mode&&t.button<0&&t.stage==='waiting')t.setMode(uiMode(mode));if(!['waiting','showdown'].includes(t.stage))return;if(!sb&&!bb)return;if(+sb&&sb%100===0)t.sb=+sb;if(+bb&&bb%100===0)t.bb=+bb;t.log.push('Réglages : '+({holdem:"Hold'em",omaha:'Omaha PL',omahanl:'Omaha NL',dealer:'Choix du donneur'})[t.mode]+' '+t.sb+'/'+t.bb);}));
+  sock.on('settings',g(({sb,bb})=>{if(room.host!==tok)return;const t=room.t;if(!['waiting','showdown'].includes(t.stage))return;if(!sb&&!bb)return;if(+sb&&sb%100===0)t.sb=+sb;if(+bb&&bb%100===0)t.bb=+bb;t.log.push('Blindes : '+t.sb+'/'+t.bb);}));
   sock.on('reset',g(()=>{if(room.host===tok){room.t.fullReset();io.to('r'+room.code).emit('toast','Table réinitialisée : tout le monde repart à 5 000');}}));
   // réactions rapides : liste fermée, 1 par seconde et par joueur (côté serveur)
   sock.on('react',e=>{if(!room||!REACT.includes(e))return;const now=Date.now();room.rx=room.rx||{};if(now-(room.rx[tok]||0)<1000)return;room.rx[tok]=now;
@@ -40,7 +40,6 @@ io.on('connection',sock=>{let room=null,tok=null;
   let vq=[];sock.on('vsig',msg=>{if(!room||!msg||typeof msg.to!=='string')return;const now=Date.now();vq=vq.filter(t=>now-t<1000);if(vq.length>=VRATE)return;vq.push(now);
     const v=room.voice||{};if(!v[sock.id]||!v[msg.to]||!room.sockets[msg.to])return;let d;try{d=JSON.stringify(msg.data);}catch(e){return;}if(!d||d.length>VMAX)return;
     io.to(msg.to).emit('vsig',{from:sock.id,data:msg.data});});
-  sock.on('nextgame',g(v=>room.t.chooseNext(tok,v)));
   sock.on('rebuy',g(amount=>room.t.rebuy(tok,amount===undefined?1000:amount)));
   sock.on('disconnect',()=>{if(!room)return;const r=room;delete r.sockets[sock.id];if(r.voice&&r.voice[sock.id]){delete r.voice[sock.id];sendVoice(r);}
     if(!Object.values(r.sockets).includes(tok)&&r.t.seatOf(tok)>=0){r.t.setConnected(tok,false);clearTimeout(r.grace[tok]);
@@ -48,8 +47,6 @@ io.on('connection',sock=>{let room=null,tok=null;
         if(r.host===tok){const n=r.t.seats.find(x=>x&&x.connected)||r.t.seats.find(x=>x);if(n){r.host=n.id;r.t.log.push(n.name+' devient hôte');}}cleanup(r);},GRACE);}
     cleanup(r);});
 });
-// choix proposés : Hold'em (NL) et Omaha (pot-limit) ; Omaha NL -> Omaha, choix du donneur -> Hold'em (moteur conservé)
-const uiMode=m=>m==='omaha'||m==='omahanl'?'omaha':'holdem';
 const REACT=['😂','😱','👏','🍀','🔥','😎'];
 const AVS=['🦊','🐼','🐯','🦁','🐸','🐵','🐙','🦄','🐺','🐻','🐨','🐷','😎','🤠','🥷','🧙','👑','🎩','💎','🔥','🍀','🎲','🃏','🚀'];
 function cleanAv(a){return AVS.includes(a)?a:null;}

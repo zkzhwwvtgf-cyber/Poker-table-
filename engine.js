@@ -69,18 +69,16 @@ class Table{
   startHand(){
     if(this.stage!=='waiting'&&this.stage!=='showdown')return false;
     if(this.ready().length<2){const m='Pas assez de joueurs avec des jetons — recavez-vous (💰 Se recaver)';if(this.log[this.log.length-1]!==m)this.log.push(m);return false;}
-    if(this.pendingMode){this.mode=this.pendingMode;this.pendingMode=null;if(this.mode!=='dealer')this.variant=this.mode;}this.nextChosenHold=this.dealerChoice&&this.nextChosen;this.nextChosen=null;if(this.pendingReset)this.resetStacks();
+    if(this.pendingMode){this.mode=this.pendingMode;this.pendingMode=null;if(this.mode!=='dealer')this.variant=this.mode;}if(this.pendingReset)this.resetStacks();
     this.button=this.next(this.button<0?this.seats.length-1:this.button,s=>s.chips>0&&!s.sitOut);
-    if(this.mode==='dealer'||this.dealerChoice&&!this.nextChosenHold){this.stage='choosing';this.chooser=this.button;this.hand=null;
+    if(this.mode==='dealer'||this.dealerChoice){this.stage='choosing';this.chooser=this.button;this.hand=null;
       clearTimeout(this.timer);this.choiceDeadline=Date.now()+this.choiceTimeout;
       const prev=this.dealerChoice?(this.variant==='omahanl'?'omaha':VARS.includes(this.variant)?this.variant:'holdem'):(this.variant||'holdem');
       const ch=this.seats[this.button];if(!ch.connected){this.chooseVariant(ch.id,prev,true);return true;}
       this.timer=setTimeout(()=>{if(this.stage==='choosing'){this.chooseVariant(this.seats[this.chooser].id,prev,true);this.onChange();}},this.choiceTimeout);return true;}
-    this.nextChosenHold=null;this.variant=VARS.includes(this.mode)?this.mode:'holdem';this.deal();return true;
+    this.variant=VARS.includes(this.mode)?this.mode:'holdem';this.deal();return true;
   }
   nextDealer(){if(this.button<0)return -1;return this.next(this.button,s=>s.chips>0&&!s.sitOut);}
-  chooseNext(id,v){if(!['holdem','omaha'].includes(v)||this.stage==='choosing')return false;const i=this.seatOf(id),nd=this.nextDealer();if(i<0||nd<0||i!==nd)return false;
-    if(this.mode==='dealer')return false;if(this.dealerChoice){this.nextChosen=v;this.log.push(this.seats[i].name+' choisit : '+(v==='omaha'?'Omaha':"Hold'em"));return true;}this.pendingMode=v===this.mode?null:v;this.nextChosen=v;this.log.push(this.seats[i].name+' choisit : '+(v==='omaha'?'Omaha':"Hold'em"));return true;}
   chooseVariant(id,v,auto){if(this.stage!=='choosing'||this.seats[this.chooser]?.id!==id)return false;if(!(this.dealerChoice?['holdem','omaha','draw','stud']:VARS).includes(v))return false;
     clearTimeout(this.timer);this.variant=v;if(this.dealerChoice&&this.mode!=='dealer')this.mode=v;this.chosenAt=Date.now();this.log.push((auto?'(délai) ':'')+this.seats[this.chooser].name+' choisit '+({omaha:'Omaha PL',omahanl:'Omaha NL',draw:'Five Card Draw',stud:'Stud'}[v]||"Hold'em"));this.deal();return true;}
   deal(){
@@ -175,7 +173,7 @@ class Table{
   static fromJSON(d){const t=new Table(d);Object.assign(t,{pendingMode:d.pendingMode||null,seats:d.seats,variant:d.variant,button:d.button,log:d.log||[]});return t;}
   view(id){const me=this.seatOf(id),h=this.hand;
     return {turnStart:h?h.turnStart:0,stage:this.stage,mode:this.mode,pendingMode:this.pendingMode||null,variant:this.variant,sb:this.sb,bb:this.bb,button:this.button,toAct:this.toAct,me,
-      lastAction:this.lastAction||'',nextDealer:this.nextDealer(),nextChosen:this.nextChosen||null,chooser:this.stage==='choosing'?this.chooser:-1,chosenAt:this.chosenAt||0,now:Date.now(),choiceDeadline:this.choiceDeadline,log:this.log.slice(-8),
+      lastAction:this.lastAction||'',nextDealer:this.nextDealer(),chooser:this.stage==='choosing'?this.chooser:-1,chosenAt:this.chosenAt||0,now:Date.now(),choiceDeadline:this.choiceDeadline,log:this.log.slice(-8),
       board:h?h.board:[],pot:h?this.potTotal():0,currentBet:h?h.currentBet:0,results:h?h.results:null,
       limits:(h&&me===this.toAct&&me>=0&&BET.includes(this.stage))?this.limits(me):null,
       spectator:me<0,records:this.records(),seats:this.seats.map((s,i)=>s&&{name:s.name,avatar:s.avatar||null,rebuys:s.rebuys||0,rebuyTotal:s.rebuyTotal||0,engaged:s.engaged||CONFIG.STACK,bilan:s.chips+(h&&h.pl[i]&&this.stage!=='showdown'?h.pl[i].total:0)-(s.engaged||CONFIG.STACK),last:h&&h.pl[i]?h.pl[i].last||null:null,chips:s.chips,connected:s.connected,
