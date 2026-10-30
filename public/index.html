@@ -300,6 +300,7 @@ body::before{animation:none!important;inset:0;background:radial-gradient(ellipse
 #lobby .brand img.hlogo{width:min(84vw,380px);height:auto;border-radius:0;box-shadow:none;object-fit:contain;filter:drop-shadow(0 8px 18px #000c)}
 .jbadge .tile{background:radial-gradient(circle,#11643a,#06301b)}.jbadge .tile img{object-fit:contain;padding:2px;box-sizing:border-box}
 .top .brand{justify-content:flex-start}
+.seat.win{z-index:60!important}.winlbl{position:relative;z-index:61;display:flex;flex-direction:column;align-items:center;gap:1px;margin-top:2px;padding:4px 10px;border-radius:12px;background:rgba(10,14,8,.82);border:1.5px solid #f5c84a;box-shadow:0 4px 14px rgba(0,0,0,.55);white-space:nowrap;line-height:1.05;pointer-events:none}.winlbl b{font-size:22px;font-weight:900;color:#ffd75e;text-shadow:0 2px 3px #000,0 0 8px rgba(0,0,0,.8)}.winlbl span{font-size:18px;font-weight:900;color:#fff;text-shadow:0 2px 3px #000}@media(min-width:900px){.winlbl b{font-size:26px}.winlbl span{font-size:21px}}
 </style></head><body>
 <div id="toast"></div>
 <div id="lobby"><div class="brand"><a class="tlink" href="https://poker-stephane.onrender.com" target="_self" aria-label="Steph&#39;s Table — accueil"><img class="hlogo" src="/brand-800.webp?v=1" alt="Steph&#39;s Table" width="800" height="447" fetchpriority="high"></a><div class="wordmark rainbow" id="wm"></div><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/brand-160.webp?v=1" loading="lazy" width="160" height="89" alt="Steph&#39;s Table"></span><span class="cap">Steph&#39;s Table</span></a></div><div class="tagline">♠ ♥ Poker entre amis ♣ ♦</div>
@@ -414,7 +415,7 @@ function render(){const s=S,me=s.me;nowSeen=new Set();$('code').textContent='Tab
   <div class="cards">${p.hole.map((c,j)=>card(c,'s'+i+'_'+j,W.size?(winners.has(i)&&W.has(c)?'hl':'dim'):winners.has(i))).join('')}</div>
   <div class="plate ${nl?'flash':''}"><div class="av" style="--avc:${AV[i%6]}">${i===s.toAct?'<span class="timer" data-t="1"></span>':''}${avHTML(p,i)}</div><div class="info"><b>${p.name}</b><span class="chn">${fmt(p.chips)}</span></div>${i===s.button?'<span class="dealer">D</span>':''}${vSeat(i)}</div>
   <div class="net ${cl(p.bilan)}" title="Résultat net (pile − total engagé, recaves comprises)">${p.bilan?sg(p.bilan):'0'}</div>${p.connected===false?'<div class="away">déconnecté</div>':''}
-  ${p.handName?'<div style="font-size:10px;color:#ffe27a;font-weight:800">'+p.handName+'</div>':''}<div>${p.bet?`<span class="bet">${chips(p.bet)} ${fmt(p.bet)}</span>`:''}</div></div>`;}).join('');
+  ${(()=>{const R=winners.has(i)&&(s.results||[]).filter(r=>r.seat===i);const amt=R&&R.reduce((a,r)=>a+(r.amount||0),0);const hn=p.handName||(R&&R[0]&&R[0].hand)||'';return R?'<div class="winlbl">'+(hn?'<b>'+hn+'</b>':'')+(amt?'<span>+'+fmt(amt)+'</span>':'')+'</div>':(hn?'<div style="font-size:11px;color:#ffe27a;font-weight:800">'+hn+'</div>':'');})()}<div>${p.bet?`<span class="bet">${chips(p.bet)} ${fmt(p.bet)}</span>`:''}</div></div>`;}).join('');
  if(s.stage==='waiting')seen=new Set();else seen=nowSeen;
  let pr='';if(s.stage==='choosing'){if(s.chooser===me)pr=`<b style="font-family:Bungee;font-size:18px;color:#ffe27a">Quelle variante ?</b> <span id="cd"></span><br><button class="cyan" onclick="sock.emit('choose','holdem')">Hold'em</button><button class="pink" onclick="sock.emit('choose','omaha')">Omaha PL</button><button onclick="sock.emit('choose','omahanl')">Omaha NL</button>`;else pr=s.seats[s.chooser].name+' choisit la variante… <span id="cd"></span>';}
  else if(s.stage==='waiting'||s.stage==='showdown'){pr=(s.host||s.stage==='showdown')?`<button class="pink" onclick="sock.emit('start')">${s.stage==='waiting'?'Lancer la partie 🚀':'Main suivante ▶'}</button>`:'En attente de l’hôte…';if(s.seats.filter(x=>x).length<2)pr='En attente d’autres joueurs… Invite tes amis ! 📱';}
@@ -431,10 +432,10 @@ function fitLogo(){requestAnimationFrame(()=>requestAnimationFrame(()=>{const L=
  const vis=e=>{const r=e.getBoundingClientRect();return r.width&&r.height?r:null};let top=fr.top+fr.height*.5,bot=fr.bottom-8;
  for(const e of document.querySelectorAll('#board,#pot,#res,#badge')){const r=vis(e);if(r)top=Math.max(top,r.bottom);}
  const obs=[...document.querySelectorAll('.seat .cards,.seat .plate,.bet')].map(vis).filter(r=>r&&r.bottom>top);
- let hgt=Math.min(fr.height*.34,fr.width*.5/AR),bt=bot,ok=false;for(const mn=hgt*.7;hgt>=mn;hgt-=3){const hw=hgt*AR/2+4;bt=bot;for(const r of obs)if(r.right>cx-hw&&r.left<cx+hw)bt=Math.min(bt,r.top);if(bt-top-6>=hgt){ok=true;break;}}
+ let hgt=Math.min(fr.height*.19,fr.width*.28/AR),bt=bot,ok=false;for(const mn=hgt*.7;hgt>=mn;hgt-=3){const hw=hgt*AR/2+4;bt=bot;for(const r of obs)if(r.right>cx-hw&&r.left<cx+hw)bt=Math.min(bt,r.top);if(bt-top-6>=hgt){ok=true;break;}}
  const solo=!document.querySelector('#board .card');if(solo)ok=false;L.classList.toggle('under',!ok);L.classList.toggle('solo',solo);
  if(ok){L.style.height=hgt+'px';L.style.top=((top+bt)/2-fr.top)+'px';}
- else{const b=vis($('board'))||fr;const hh=Math.min(fr.height*.6,fr.width*(solo?.8:.62)/AR);L.style.height=hh+'px';L.style.top=(b.top+b.height/2-fr.top)+'px';}}));}
+ else{const b=vis($('board'))||fr;const hh=Math.min(fr.height*.33,fr.width*(solo?.44:.34)/AR);L.style.height=hh+'px';L.style.top=(b.top+b.height/2-fr.top)+'px';}}));}
 addEventListener('resize',()=>S&&fitLogo());
 function fitMine(){requestAnimationFrame(()=>{const c=document.querySelector('.seat.me .plate')||document.querySelector('.seat.me .cards'),b=$('bar');if(!c||!b)return;const br=b.getBoundingClientRect();if(br.top<10&&br.left>0)return;
  const d=c.getBoundingClientRect().bottom-b.getBoundingClientRect().top+8;if(d>0)scrollBy({top:d,behavior:'smooth'});});}
