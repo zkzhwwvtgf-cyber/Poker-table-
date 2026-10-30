@@ -44,6 +44,36 @@ t('recave au choix 1 000 à 5 000 par 1 000',()=>{const T=sim('holdem');for(cons
   a.equal(T.seats[1].rebuys,5);a.equal(T.seats[1].rebuyTotal,15000);for(const v of [0,500,1500,6000,-1000,'abc']){T.seats[1].chips=0;a.equal(T.rebuy('b',v),false,'accepté '+v);}
   T.seats[1].chips=200;a.equal(T.rebuy('b',1000),false);T.seats[1].chips=100;a(T.rebuy('b',1000));a.equal(T.seats[1].chips,1100);T.seats[1].rebuys--;T.seats[1].rebuyTotal-=1000;a.equal(Table.fromJSON(JSON.parse(JSON.stringify(T.toJSON()))).seats[1].rebuyTotal,15000);});
 t('montants multiples de 100',()=>{const T=sim('holdem');T.startHand();const L=T.limits(T.toAct);a.equal(T.act(T.seats[T.toAct].id,'raise',L.minTo+50),false);a(T.act(T.seats[T.toAct].id,'raise',L.minTo+100));});
+// choix du donneur sous le siège : 4 jeux, serveur autoritaire
+{const {upScore}=require('./engine');const mk=()=>{const T=new Table({mode:'holdem',dealerChoice:true,choiceTimeout:40});['a','b','c','d'].forEach(x=>T.addPlayer(x,x.toUpperCase()));return T;};
+ const play=T=>{let g=0;while(T.stage!=='showdown'&&g++<200){const i=T.toAct;if(T.stage==='draw')T.act(T.seats[i].id,'draw',[]);else T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}a.equal(T.stage,'showdown');};
+ t('donneur : 4 jeux, seul le donneur choisit, nombre de cartes',()=>{const T=mk();for(const [v,n] of [['holdem',2],['omaha',4],['draw',5],['stud',3]]){T.startHand();a.equal(T.stage,'choosing');
+   a.equal(T.chooseVariant(T.seats[(T.chooser+1)%4].id,v),false);a.equal(T.chooseVariant(T.seats[T.chooser].id,'omahanl'),false);a(T.chooseVariant(T.seats[T.chooser].id,v));clearTimeout(T.timer);
+   a.equal(T.variant,v);a.equal(T.mode,v);for(const p of Object.values(T.hand.pl))a.equal(p.hole.length,n,v);if(v!=='stud')a.equal(T.hand.board.length,0);play(T);}});
+ t('draw : échange et remplacement, pas de board',()=>{const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw');clearTimeout(T.timer);
+   let g=0;while(T.stage==='preflop'&&g++<50){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}a.equal(T.stage,'draw');
+   const i=T.toAct,old=T.hand.pl[i].hole.slice();a.equal(T.act(T.seats[i].id,'check'),false);a(T.act(T.seats[i].id,'draw',[0,2,4]));const nw=T.hand.pl[i].hole;a.equal(nw.length,5);
+   a.equal(nw[1],old[1]);a.equal(nw[3],old[3]);for(const k of [0,2,4])a(!old.includes(nw[k]),'nouvelle carte');a.equal(T.view('a').seats[i].drawn,3);
+   const all=Object.values(T.hand.pl).flatMap(p=>p.hole);a.equal(new Set(all).size,all.length,'pas de doublon');
+   while(T.stage==='draw')T.act(T.seats[T.toAct].id,'draw',[0,1,2,3,4]);a.equal(T.stage,'river');play(T);a.equal(T.hand.board.length,0);});
+ t('draw : paquet épuisé -> défausses remélangées',()=>{const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw');clearTimeout(T.timer);
+   while(T.stage==='preflop'){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}T.hand.deck.splice(0,T.hand.deck.length-2);
+   T.act(T.seats[T.toAct].id,'draw',[0,1,2,3,4]);const all=Object.values(T.hand.pl).flatMap(p=>p.hole);a.equal(new Set(all).size,all.length);});
+ t('stud : rues, cartes visibles, bring-in, 7 cartes',()=>{const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'stud');clearTimeout(T.timer);
+   const h=T.hand;a.equal(T.potTotal(),100,'bring-in seul (pas de blindes)');const lo=h.bringIn,upc=j=>h.pl[j].hole[2];for(const j in h.pl)a(T.view('x')&&true);
+   const RK='23456789TJQKA';for(const j in h.pl)a(RK.indexOf(upc(lo)[0])<=RK.indexOf(upc(j)[0]));
+   const other=T.seats.findIndex((s,j)=>j!==+Object.keys(h.pl)[0]);const v=T.view('a'),me=0;for(const j in h.pl){const hv=v.seats[j].hole;if(+j===me){a.equal(hv.length,3);continue;}a.equal(hv[0],'??');a.equal(hv[1],'??');a.equal(hv[2],h.pl[j].hole[2]);}
+   const L=T.limits(T.toAct);a.equal(L.toCall,100);a.equal(L.minTo,200,'complément à 200');
+   for(const [st,n,lastUp] of [['flop',4,true],['turn',5,true],['river',6,true],['seventh',7,false]]){let g=0;const s0=T.stage;while(T.stage===s0&&g++<50){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}
+     a.equal(T.stage,st);for(const p of Object.values(h.pl)){a.equal(p.hole.length,n);a.equal(p.up[n-1],lastUp);}
+     const vis=j=>h.pl[j].hole.filter((c,k)=>h.pl[j].up[k]);for(const j in h.pl)a(cmp(upScore(vis(T.toAct)),upScore(vis(j)))>=0,'1er à parler = meilleure main visible');}
+   const vw=T.view('b');a.equal(vw.seats[0].hole.filter(c=>c!=='??').length,4);play(T);a.equal(h.board.length,0);a(T.hand.results.length>=1);});
+ t('évaluateur 5 et 7 cartes sans board',()=>{a.equal(bestHand('Ah Ad As Kc Kd'.split(' '),[],'draw').name,'Full');a.equal(bestHand('2h 3h 9h Jh Kh'.split(' '),[],'draw').name,'Couleur');
+   a.equal(bestHand('2c 3d 4h 5s 6c Kd Kh'.split(' '),[],'stud').name,'Quinte');a.equal(bestHand('9s 9h 2c 2d 7s Ks 3h'.split(' '),[],'stud').name,'Double paire');});
+ t('donneur déconnecté -> jeu précédent',()=>{const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'stud');clearTimeout(T.timer);play(T);T.startHand();a.equal(T.stage,'choosing');
+   T.setConnected(T.seats[T.chooser].id,false);a.equal(T.variant,'stud');a.equal(T.stage,'preflop');clearTimeout(T.awayT);});
+ {const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw');clearTimeout(T.timer);play(T);T.startHand();a.equal(T.stage,'choosing');
+  setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.variant,'draw');a.equal(T.hand.pl[0].hole.length,5);clearTimeout(T.awayT);console.log('✓ donneur : délai 15 s -> jeu de la main précédente (draw)');},90);}}
 const T=sim('dealer');T.startHand();a.equal(T.stage,'choosing');a.equal(T.act('a','check'),false);
 a.equal(T.chooseVariant(T.seats[(T.chooser+1)%3].id,'omaha'),false);T.chooseVariant(T.seats[T.chooser].id,'omaha');a.equal(T.variant,'omaha');a.equal(T.stage,'preflop');a.equal(T.hand.pl[0].hole.length,4);
 while(T.stage!=='showdown'){const i=T.toAct;T.act(T.seats[i].id,'fold');}
@@ -119,6 +149,10 @@ function serverTest(){const {spawn}=require('child_process'),{io}=require('socke
    A.emit('vleave');await w(150);a.equal(vl.length,1);O.close();console.log('✓ serveur : vocal — relais même table, taille et débit limités');}
   {const M=mk();await w(200);const c3=await new Promise(r=>M.emit('create',{name:'M',mode:'omahanl',token:'tm'},x=>r(x.code)));await new Promise(r=>M.emit('join',{code:c3,name:'M',token:'tm'},r));await w(100);a.equal(M.st.mode,'omaha');
    M.emit('settings',{mode:'dealer'});await w(100);a.equal(M.st.mode,'holdem');M.close();console.log("✓ serveur : jeux proposés Hold'em / Omaha (Omaha NL -> Omaha, donneur -> Hold'em)");}
+  {const X=mk(),Y=mk();await w(200);const c4=await new Promise(r=>X.emit('create',{name:'X',token:'tx4'},x=>r(x.code)));await new Promise(r=>X.emit('join',{code:c4,name:'X',token:'tx4'},r));await new Promise(r=>Y.emit('join',{code:c4,name:'Y',token:'ty4'},r));
+   X.emit('start');await w(150);a.equal(X.st.stage,'choosing');const ch=X.st.chooser,C1=ch===X.st.me?X:Y,C2=C1===X?Y:X;C2.emit('choose','omaha');await w(100);a.equal(X.st.stage,'choosing','autre joueur refusé');
+   C1.emit('choose','omaha');await w(150);a.equal(C1.st.variant,'omaha');a.equal(C1.st.seats[C1.st.me].hole.length,4);a.equal(C2.st.seats[C2.st.me].hole.length,4);
+   a.deepEqual(C1.st.seats[C2.st.me].hole,['??','??','??','??']);X.close();Y.close();console.log('✓ serveur : choix du donneur autoritaire (Omaha -> 4 cartes)');}
   // plus personne connecté : la table survit pendant la grâce, puis disparaît
   A.close();B2.close();C.close();await w(300);const D=mk();await w(200);const r1=await new Promise(r=>D.emit('join',{code,name:'A',token:'ta'},r));a(r1.ok,'table supprimée pendant la grâce');await w(150);
   a(D.st.seats.filter(x=>x).length>=1);D.close();await w(1500);const E=mk();await w(200);const r2=await new Promise(r=>E.emit('join',{code,name:'Z',token:'tz'},r));a.equal(r2.error,'Table introuvable');E.close();

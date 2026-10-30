@@ -14,7 +14,7 @@ const srv=http.createServer(app),io=new Server(srv,{cors:{origin:'*'}});const ro
 const code=()=>crypto.randomBytes(4).toString('hex').slice(0,6).toUpperCase();
 function push(r){for(const [sid,tok] of Object.entries(r.sockets)){const s=io.sockets.sockets.get(sid);if(s)s.emit('state',{...r.t.view(tok),code:r.code,host:r.host===tok});}}
 io.on('connection',sock=>{let room=null,tok=null;
-  sock.on('create',({name,mode,sb,bb,token},cb)=>{mode=uiMode(mode);const c=code();const t=new Table({mode,sb:+sb||CONFIG.SB,bb:+bb||CONFIG.BB,awayDelay:AWAY});
+  sock.on('create',({name,mode,sb,bb,token},cb)=>{mode=uiMode(mode);const c=code();const t=new Table({mode,sb:+sb||CONFIG.SB,bb:+bb||CONFIG.BB,awayDelay:AWAY,dealerChoice:true,choiceTimeout:+process.env.CHOICE_MS||15000});
     const r=rooms[c]={code:c,t,host:token,sockets:{},grace:{}};t.onChange=()=>push(r);cb&&cb({code:c});});
   sock.on('join',({code:c,name,token,avatar,photo},cb)=>{const r=rooms[(c||'').toUpperCase()];if(!r)return cb&&cb({error:'Table introuvable'});
     room=r;tok=String(token||sock.id);r.toks=r.toks||{};if(token)r.toks[tok]=1;let i=r.t.seatOf(tok);const nm=String(name||'Joueur').slice(0,14);const av=cleanAv(avatar),ph=cleanPh(photo);
