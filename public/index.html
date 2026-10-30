@@ -259,6 +259,24 @@ html.rm .fly,html.rm .bub{display:none}
 }
 @media (orientation:landscape) and (max-height:600px) and (max-width:800px){.tools button,.tools select{padding:5px 5px;font-size:10px}.top .wordmark{display:none}.tools select{max-width:78px}}
 @media (orientation:landscape) and (max-height:350px){.seat.me .cards{height:48px;margin-bottom:-6px}.seat.me .card{width:33px;height:47px}.seat.me .card .rk{font-size:18px}.seat.me .card .st{font-size:16px}}
+
+/* pods joueurs agrandis */
+.seat{width:180px}.plate{gap:10px;padding:6px 16px 6px 6px;border-width:2px}.av{flex:0 0 58px;height:58px;font-size:24px}
+.info b{font-size:16px;font-weight:900;max-width:96px;letter-spacing:.01em}.info span,.info .chn{font-size:20px;font-weight:900;letter-spacing:.02em;text-shadow:0 1px 0 #0008}
+.seat.turn .plate{border:3px solid var(--gold);box-shadow:0 0 0 2px #ffe27a66,0 0 26px #ffc83dcc,0 0 56px #ffc83d77}
+.seat.turn .info b{color:#ffe27a}
+.dealer{width:26px;height:26px;line-height:26px;font-size:13px}
+@media(max-width:600px) and (orientation:portrait){
+ .seat{width:92px}.plate{flex-direction:column;gap:0;padding:4px 5px 3px;border-radius:20px}.av{flex:0 0 42px;width:42px;height:42px;font-size:18px}
+ .info{text-align:center;line-height:1.05}.info b{font-size:13px;max-width:82px}.info span,.info .chn{font-size:16px}.seat:not(.me) .cards{height:32px;margin-bottom:-4px}.seat:not(.me) .cards .card{width:24px;height:34px}
+ .dealer{right:-6px;bottom:auto;top:-6px}}
+@media (orientation:landscape) and (max-height:600px){
+ .seat{width:136px}.plate{gap:6px;padding:3px 10px 3px 3px}.av{flex:0 0 42px;height:42px;font-size:18px}
+ .info b{font-size:13px;max-width:76px}.info span,.info .chn{font-size:16px}}
+@media (orientation:landscape) and (max-height:380px){.av{flex-basis:36px;height:36px;font-size:16px}.info span,.info .chn{font-size:15px}}
+#muteBtn{top:auto;bottom:4px;right:48px}#vbox{top:auto;bottom:4px;right:92px;flex-direction:row-reverse}
+@media (orientation:landscape) and (max-height:600px) and (max-width:700px){.seat{width:118px}.av{flex-basis:32px;height:32px;font-size:15px}.info b{font-size:12px;max-width:66px}.info span,.info .chn{font-size:14px}.plate{padding:2px 8px 2px 2px}}
+@media (orientation:portrait) and (max-width:600px) and (max-height:700px){.av{flex-basis:34px;width:34px;height:34px;font-size:15px}.info b{font-size:12px}.info span,.info .chn{font-size:14px}.seat{width:84px}}
 </style></head><body>
 <div id="toast"></div>
 <div id="lobby"><div class="brand"><a class="tlink" href="https://poker-stephane.onrender.com" target="_self" aria-label="Steph&#39;s Table — accueil"><img class="hlogo" src="/logo-320.webp?v=3" alt="Steph&#39;s Table" width="320" height="320" fetchpriority="high" onerror="this.onerror=null;this.src='/logo.png'"></a><div class="wordmark rainbow" id="wm"></div><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/logo-128.webp?v=3" loading="lazy" width="128" height="128" alt="Steph&#39;s Table" onerror="this.onerror=null;this.src='/logo.png'"></span><span class="cap">Steph&#39;s Table</span></a></div><div class="tagline">♠ ♥ Poker entre amis ♣ ♦</div>
@@ -366,7 +384,7 @@ function render(){const s=S,me=s.me;nowSeen=new Set();$('code').textContent='Tab
  const winners=new Set(s.stage==='showdown'&&s.results?s.results.map(r=>r.seat):[]);
  $('res').innerHTML=s.stage==='showdown'&&s.results?s.results.map(r=>`🏆 ${r.name} +${fmt(r.amount)}${r.hand?' ('+r.hand+')':''}`).join('<br>'):'';
  const n=s.seats.length,off=me>=0?me:0,mob=innerWidth<600,el=(Date.now()-(s.turnStart||Date.now()))/1000;
- $('seats').innerHTML=s.seats.map((p,i)=>{if(!p)return'';const k=(i-off+n)%n,a=Math.PI/2+k*2*Math.PI/n,x=50+(mob?40:45)*Math.cos(a),y=50+(mob?44:42)*Math.sin(a);
+ $('seats').innerHTML=s.seats.map((p,i)=>{if(!p)return'';const k=(i-off+n)%n,a=Math.PI/2+k*2*Math.PI/n,x=50+(mob?40:matchMedia('(orientation:landscape) and (max-height:600px)').matches?40:45)*Math.cos(a),y=50+(mob?(Math.abs(Math.sin(a))<.99?52:44):42)*Math.sin(a);
   const o=P&&P.seats[i],nl=p.last&&(!o||!o.last||o.last.type!==p.last.type||o.last.amount!==p.last.amount);
   return `<div data-seat="${i}" class="seat ${i===s.toAct?'turn':''} ${p.folded?'fold':''} ${winners.has(i)?'win':''} ${i===me?'me':'sm'}" style="left:${x}%;top:${y}%">
   ${p.last&&s.stage!=='showdown'?`<span class="act a-${p.last.type}" ${actHide(i,nl)}>${AL[p.last.type]}${p.last.amount&&p.last.type!=='fold'?' '+fmt(p.last.amount):''}</span>`:''}
