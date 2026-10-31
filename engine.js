@@ -80,12 +80,12 @@ class Table{
   }
   nextDealer(){if(this.button<0)return -1;return this.next(this.button,s=>s.chips>0&&!s.sitOut);}
   chooseVariant(id,v,auto){if(this.stage!=='choosing'||this.seats[this.chooser]?.id!==id)return false;if(!(this.dealerChoice?['holdem','omaha','draw','stud']:VARS).includes(v))return false;
-    clearTimeout(this.timer);this.variant=v;if(this.dealerChoice&&this.mode!=='dealer')this.mode=v;this.chosenAt=Date.now();this.log.push((auto?'(délai) ':'')+this.seats[this.chooser].name+' choisit '+({omaha:'Omaha PL',omahanl:'Omaha NL',draw:'Five Card Draw',stud:'Stud'}[v]||"Hold'em"));this.deal();return true;}
+    clearTimeout(this.timer);this.variant=v;if(this.dealerChoice&&this.mode!=='dealer')this.mode=v;this.chosenAt=Date.now();this.log.push((auto?'(délai) ':'')+this.seats[this.chooser].name+' choisit '+({omaha:'Omaha PL',omahanl:'Omaha NL',draw:'Five Card Draw Plus',stud:'Stud'}[v]||"Hold'em"));this.deal();return true;}
   deal(){
     const n=HOLEN[this.variant]||(isOmaha(this.variant)?4:2),deck=newDeck();
     const pl={};this.seats.forEach((s,i)=>{if(s&&s.chips>0&&!s.sitOut)pl[i]={hole:[],up:[],bet:0,total:0,folded:false,allin:false,acted:false};});
     for(let r=0;r<n;r++)for(const i in pl){pl[i].hole.push(deck.pop());pl[i].up.push(this.variant==='stud'&&r===2);}
-    this.hand={deck,muck:[],board:[],pl,currentBet:0,minRaise:this.bb,results:null};this.stage='preflop';
+    this.hand={deck,muck:[],board:[],pl,currentBet:0,minRaise:this.bb,results:null};if(this.variant==='draw'){this.hand.board.push(deck.pop());this.hand.hidden=deck.pop();}this.stage='preflop';
     const ids=Object.keys(pl).map(Number);
     if(this.variant==='stud'){// pas de blindes : bring-in 100 par la plus petite carte visible (♣<♦<♥<♠), complément à 200
       const lo=ids.slice().sort((a,b)=>{const x=pl[a].hole[2],y=pl[b].hole[2];return rv(x)-rv(y)||SUITV[x[1]]-SUITV[y[1]];})[0];
@@ -120,7 +120,7 @@ class Table{
     p.drawn=idx.length;p.acted=true;this.log.push(this.seats[i].name+(idx.length?' échange '+idx.length:' est servi'));this.lastAction=this.log[this.log.length-1];p.last={type:'draw',amount:idx.length};
     const nx=this.next(i,(s,j)=>h.pl[j]&&!h.pl[j].folded&&!h.pl[j].acted);h.turnStart=Date.now();
     if(nx>=0){this.toAct=nx;this.scheduleAway();return true;}return this.endDraw();}
-  endDraw(){const h=this.hand;for(const q of Object.values(h.pl)){q.acted=false;if(q.last&&q.last.type==='draw')q.last=null;}this.stage='river';
+  endDraw(){const h=this.hand;for(const q of Object.values(h.pl)){q.acted=false;if(q.last&&q.last.type==='draw')q.last=null;}if(h.hidden){h.board.push(h.hidden);h.hidden=null;this.log.push('Carte centrale retournée');}this.stage='river';
     this.toAct=this.next(this.button,(s,j)=>h.pl[j]&&!h.pl[j].folded&&!h.pl[j].allin);this.checkRound();this.scheduleAway();return true;}
   studFirst(){const h=this.hand,c=Object.keys(h.pl).map(Number).filter(j=>!h.pl[j].folded&&!h.pl[j].allin);if(!c.length)return -1;const N=this.seats.length;
     const vis=j=>h.pl[j].hole.filter((x,k)=>h.pl[j].up[k]);return c.sort((a,b)=>cmp(upScore(vis(b)),upScore(vis(a)))||((a-this.button-1+N)%N)-((b-this.button-1+N)%N))[0];}
@@ -174,7 +174,7 @@ class Table{
   view(id){const me=this.seatOf(id),h=this.hand;
     return {turnStart:h?h.turnStart:0,stage:this.stage,mode:this.mode,pendingMode:this.pendingMode||null,variant:this.variant,sb:this.sb,bb:this.bb,button:this.button,toAct:this.toAct,me,
       lastAction:this.lastAction||'',nextDealer:this.nextDealer(),chooser:this.stage==='choosing'?this.chooser:-1,chosenAt:this.chosenAt||0,now:Date.now(),choiceDeadline:this.choiceDeadline,log:this.log.slice(-8),
-      board:h?h.board:[],pot:h?this.potTotal():0,currentBet:h?h.currentBet:0,results:h?h.results:null,
+      board:h?(h.hidden&&this.stage!=='showdown'?[...h.board,'??']:h.board):[],pot:h?this.potTotal():0,currentBet:h?h.currentBet:0,results:h?h.results:null,
       limits:(h&&me===this.toAct&&me>=0&&BET.includes(this.stage))?this.limits(me):null,
       spectator:me<0,records:this.records(),seats:this.seats.map((s,i)=>s&&{name:s.name,avatar:s.avatar||null,rebuys:s.rebuys||0,rebuyTotal:s.rebuyTotal||0,engaged:s.engaged||CONFIG.STACK,bilan:s.chips+(h&&h.pl[i]&&this.stage!=='showdown'?h.pl[i].total:0)-(s.engaged||CONFIG.STACK),last:h&&h.pl[i]?h.pl[i].last||null:null,chips:s.chips,connected:s.connected,
         inHand:!!(h&&h.pl[i]),folded:h&&h.pl[i]?h.pl[i].folded:false,allin:h&&h.pl[i]?h.pl[i].allin:false,bet:h&&h.pl[i]?h.pl[i].bet:0,

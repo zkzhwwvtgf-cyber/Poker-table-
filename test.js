@@ -43,13 +43,29 @@ t('montants multiples de 100',()=>{const T=sim('holdem');T.startHand();const L=T
  const play=T=>{let g=0;while(T.stage!=='showdown'&&g++<200){const i=T.toAct;if(T.stage==='draw')T.act(T.seats[i].id,'draw',[]);else T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}a.equal(T.stage,'showdown');};
  t('donneur : 4 jeux, seul le donneur choisit, nombre de cartes',()=>{const T=mk();for(const [v,n] of [['holdem',2],['omaha',4],['draw',5],['stud',3]]){T.startHand();a.equal(T.stage,'choosing');
    a.equal(T.chooseVariant(T.seats[(T.chooser+1)%4].id,v),false);a.equal(T.chooseVariant(T.seats[T.chooser].id,'omahanl'),false);a(T.chooseVariant(T.seats[T.chooser].id,v));clearTimeout(T.timer);
-   a.equal(T.variant,v);a.equal(T.mode,v);for(const p of Object.values(T.hand.pl))a.equal(p.hole.length,n,v);if(v!=='stud')a.equal(T.hand.board.length,0);play(T);}});
- t('draw : échange et remplacement, pas de board',()=>{const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw');clearTimeout(T.timer);
+   a.equal(T.variant,v);a.equal(T.mode,v);for(const p of Object.values(T.hand.pl))a.equal(p.hole.length,n,v);a.equal(T.hand.board.length,v==='draw'?1:0);play(T);}});
+ t('draw : échange et remplacement, 2 cartes centrales',()=>{const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw');clearTimeout(T.timer);
    let g=0;while(T.stage==='preflop'&&g++<50){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}a.equal(T.stage,'draw');
    const i=T.toAct,old=T.hand.pl[i].hole.slice();a.equal(T.act(T.seats[i].id,'check'),false);a(T.act(T.seats[i].id,'draw',[0,2,4]));const nw=T.hand.pl[i].hole;a.equal(nw.length,5);
    a.equal(nw[1],old[1]);a.equal(nw[3],old[3]);for(const k of [0,2,4])a(!old.includes(nw[k]),'nouvelle carte');a.equal(T.view('a').seats[i].drawn,3);
    const all=Object.values(T.hand.pl).flatMap(p=>p.hole);a.equal(new Set(all).size,all.length,'pas de doublon');
-   while(T.stage==='draw')T.act(T.seats[T.toAct].id,'draw',[0,1,2,3,4]);a.equal(T.stage,'river');play(T);a.equal(T.hand.board.length,0);});
+   while(T.stage==='draw')T.act(T.seats[T.toAct].id,'draw',[0,1,2,3,4]);a.equal(T.stage,'river');play(T);a.equal(T.hand.board.length,2);});
+ t('draw plus : 1 carte visible + 1 cachée jamais divulguée, retournée après l\'échange, éval 7 cartes',()=>{const T=new Table({mode:'holdem',dealerChoice:true,choiceTimeout:40});
+   ['a','b','c','d','e','f'].forEach(x=>T.addPlayer(x,x.toUpperCase()));T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw');clearTimeout(T.timer);
+   const H=T.hand.hidden;a(H&&T.hand.board.length===1);
+   for(const id of 'abcdef'){const v=T.view(id);a.deepEqual(v.board,[T.hand.board[0],'??']);a(!JSON.stringify(v).includes('"'+H+'"'),'carte cachée divulguée');}
+   a(!JSON.stringify(T.toJSON()).includes('"'+H+'"'));
+   const all=[...Object.values(T.hand.pl).flatMap(p=>p.hole),...T.hand.board,H,...T.hand.deck];a.equal(new Set(all).size,52);
+   while(T.stage==='preflop'){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}
+   while(T.stage==='draw'){a(!JSON.stringify(T.view('a')).includes('"'+H+'"'));T.act(T.seats[T.toAct].id,'draw',[0,1,2,3,4]);}
+   a.equal(T.stage,'river');a.equal(T.hand.board[1],H);a.equal(T.view('a').board.length,2);a(T.view('a').limits||T.toAct!==0||true);
+   {const i=T.toAct,L=T.limits(i);a(T.act(T.seats[i].id,'raise',L.minTo),'relance autorisée au 2e tour');}
+   let g=0;while(T.stage!=='showdown'&&g++<100){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}
+   a.equal(T.stage,'showdown');const live=Object.keys(T.hand.pl).filter(j=>!T.hand.pl[j].folded);
+   for(const r of T.hand.results)a.equal(r.hand,bestHand(T.hand.pl[r.seat].hole,T.hand.board,'draw').name);
+   const vs=T.view('a');a.deepEqual(vs.board,T.hand.board);a(live.length>1);});
+ t('draw plus : pli avant le retournement -> carte cachée jamais montrée',()=>{const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw');clearTimeout(T.timer);
+   const H=T.hand.hidden;let g=0;while(T.stage==='preflop'&&g++<10){const i=T.toAct;T.act(T.seats[i].id,'fold');}a.equal(T.stage,'showdown');a(!JSON.stringify(T.view('a')).includes('"'+H+'"'));a.equal(T.view('a').board.length,1);});
  t('draw : paquet épuisé -> défausses remélangées',()=>{const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw');clearTimeout(T.timer);
    while(T.stage==='preflop'){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}T.hand.deck.splice(0,T.hand.deck.length-2);
    T.act(T.seats[T.toAct].id,'draw',[0,1,2,3,4]);const all=Object.values(T.hand.pl).flatMap(p=>p.hole);a.equal(new Set(all).size,all.length);});

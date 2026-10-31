@@ -367,7 +367,7 @@ function join(){const n=nm();if(!n)return;sock.emit('join',{code,name:n,token,..
 sock.on('connect',()=>{if(VOICE.on){Object.keys(VOICE.pcs).forEach(closePeer);setTimeout(()=>sock.emit('vjoin'),400);}if(joined)sock.emit('join',{code,name:localStorage.pkName,token,...avPay()},r=>{if(r&&r.error){toast(r.error);setTimeout(()=>location.reload(),1500);}});});
 sock.on('toast',t=>toast(t));
 let tt;function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),3500);}
-const MN={holdem:"Hold'em",omaha:'Omaha',omahanl:'Omaha NL',dealer:'Choix du donneur',draw:'Five Card Draw',stud:'Stud'};
+const MN={holdem:"Hold'em",omaha:'Omaha',omahanl:'Omaha NL',dealer:'Choix du donneur',draw:'Five Card Draw Plus',stud:'Stud'};
 const uiM=m=>m==='omaha'||m==='omahanl'?'omaha':'holdem';
 const esc=x=>String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 function closeMenu(){$('menu').style.display='none';}
@@ -393,7 +393,7 @@ const SVGS=k=>`<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><
 function card(c,key,hl){if(c==='??'){const k='b'+key;const n=!seen.has(k);nowSeen.add(k);return `<span class="card back ${n?'deal':''}"></span>`;}
  const k=key+c,n=!seen.has(k);nowSeen.add(k);const r=({T:'10',J:'V',Q:'D',K:'R'})[c[0]]||c[0],s=SY[c[1]];
  return `<span class="card ${c[1]==='h'||c[1]==='d'?'r':'k'} ${hl===true?'hl':(hl||'')} ${n?(seen.has('b'+key)?'flip':'deal'):''}"><span class="rk">${r}</span><span class="st">${SVGS(c[1])}</span></span>`;}
-const VN={holdem:"Texas Hold'em",omaha:'Omaha',omahanl:'Omaha No-Limit',draw:'Five Card Draw',stud:'Seven Card Stud'};const GS={holdem:"♠ Hold'em",omaha:'♦ Omaha',draw:'♣ Draw',stud:'♥ Stud'};const GL={holdem:"♠ Hold'em",omaha:'♦ Omaha',draw:'♣ Five Card Draw',stud:'♥ Stud'};let DSEL=new Set(),DKEY='',FLASH={until:0,seat:-1,v:''};
+const VN={holdem:"Texas Hold'em",omaha:'Omaha',omahanl:'Omaha No-Limit',draw:'Five Card Draw Plus',stud:'Seven Card Stud'};const GS={holdem:"♠ Hold'em",omaha:'♦ Omaha',draw:'♣ Draw Plus',stud:'♥ Stud'};const GL={holdem:"♠ Hold'em",omaha:'♦ Omaha',draw:'♣ Five Card Draw Plus',stud:'♥ Stud'};let DSEL=new Set(),DKEY='',FLASH={until:0,seat:-1,v:''};
 function dcPill(s,i,me){if(s.stage==='choosing'&&s.chooser===i){if(i===me)return `<div class="dcp mine" role="group" aria-label="Choisis le jeu"><b>🎲 Choisis le jeu</b><div class="dcg">${['holdem','omaha','draw','stud'].map(v=>`<button type="button" class="${v===s.variant?'on':''}" title="${VN[v]}" onclick="sock.emit('choose','${v}')">${GS[v]}</button>`).join('')}</div></div>`;return '<div class="dcp wait" aria-live="polite">🎲 Le donneur choisit<i class="dots"><i>.</i><i>.</i><i>.</i></i></div>';}
  if(FLASH.seat===i&&Date.now()<FLASH.until)return `<div class="dcp done" aria-live="polite">${GL[FLASH.v]||FLASH.v}</div>`;return '';}
 function dtog(k){DSEL.has(k)?DSEL.delete(k):DSEL.add(k);render();}function ddraw(){sock.emit('act',{action:'draw',amount:[...DSEL]});DSEL=new Set();}const AV=['#ff3ea5','#ffb020','#22c7ff','#5fdc4a','#a06bff','#ff6a3d'];
