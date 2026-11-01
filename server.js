@@ -40,6 +40,8 @@ io.on('connection',sock=>{let room=null,tok=null;
   let vq=[];sock.on('vsig',msg=>{if(!room||!msg||typeof msg.to!=='string')return;const now=Date.now();vq=vq.filter(t=>now-t<1000);if(vq.length>=VRATE)return;vq.push(now);
     const v=room.voice||{};if(!v[sock.id]||!v[msg.to]||!room.sockets[msg.to])return;let d;try{d=JSON.stringify(msg.data);}catch(e){return;}if(!d||d.length>VMAX)return;
     io.to(msg.to).emit('vsig',{from:sock.id,data:msg.data});});
+  // changement d'avatar en cours de partie (portrait, emoji, photo ou initiale)
+  sock.on('avatar',g(o=>{const i=room.t.seatOf(tok);if(i<0||!o||typeof o!=='object')return;const ph=cleanPh(o.photo),av=cleanAv(o.avatar);room.t.seats[i].avatar=ph?'photo':av;room.photos=room.photos||{};if(ph)room.photos[tok]=ph;else delete room.photos[tok];sendPhotos(room);}));
   sock.on('rebuy',g(amount=>room.t.rebuy(tok,amount===undefined?1000:amount)));
   sock.on('disconnect',()=>{if(!room)return;const r=room;delete r.sockets[sock.id];if(r.voice&&r.voice[sock.id]){delete r.voice[sock.id];sendVoice(r);}
     if(!Object.values(r.sockets).includes(tok)&&r.t.seatOf(tok)>=0){r.t.setConnected(tok,false);clearTimeout(r.grace[tok]);
