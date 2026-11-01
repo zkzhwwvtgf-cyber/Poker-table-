@@ -117,6 +117,18 @@ t('jeton 50 : SB 50, 150, 250 dessinés',()=>{a.equal(n(50,50),1);a.equal(n(150,
      a.equal(T.stage,st);for(const p of Object.values(h.pl)){a.equal(p.hole.length,n);a.equal(p.up[n-1],lastUp);}
      const vis=j=>h.pl[j].hole.filter((c,k)=>h.pl[j].up[k]);for(const j in h.pl)a(cmp(upScore(vis(T.toAct)),upScore(vis(j)))>=0,'1er à parler = meilleure main visible');}
    const vw=T.view('b');a.equal(vw.seats[0].hole.filter(c=>c!=='??').length,4);play(T);a.equal(h.board.length,0);a(T.hand.results.length>=1);});
+ t('huardesque : 5 cartes, 1 ouverte + 2 cachées, ordre des révélations, 4 tours d\'enchères',()=>{const T=mk();T.startHand();a(T.chooseVariant(T.seats[T.chooser].id,'huard'));clearTimeout(T.timer);
+   for(const p of Object.values(T.hand.pl))a.equal(p.hole.length,5);a.equal(T.hand.board.length,1);a.equal(T.hand.hidden2.length,2);
+   const vw=()=>T.view(T.seats[0].id).board;a.equal(vw().length,3);a.equal(vw().filter(c=>c==='??').length,2);
+   const seq=[],bl=[];let g=0;while(T.stage!=='showdown'&&g++<300){if(seq[seq.length-1]!==T.stage){seq.push(T.stage);bl.push(T.hand.board.length);}const i=T.toAct;
+     if(T.stage==='draw')T.act(T.seats[i].id,'draw',[0,1]);else T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}
+   a.deepEqual(seq,['preflop','draw','turn','river','seventh']);a.deepEqual(bl,[1,1,1,2,3]);a.equal(seq.filter(s=>s!=='draw').length,4);
+   a.equal(T.hand.board.length,3);a(T.log.some(l=>/Carte cachée retournée \(1\/2\)/.test(l))&&T.log.some(l=>/\(2\/2\)/.test(l)));a(T.log.some(l=>/choisit Huardesque/.test(l)));});
+ t('huardesque : abattage avec 3 cartes communes',()=>{const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'huard');clearTimeout(T.timer);
+   const ids=Object.keys(T.hand.pl).map(Number);T.hand.board=['Ah'];T.hand.hidden2=['Ad','As'];T.hand.pl[ids[0]].hole='Kc Kd 2c 3d 7h'.split(' ');T.hand.pl[ids[1]].hole='Qc Qd Qh 4s 8c'.split(' ');
+   for(const j of ids.slice(2))T.hand.pl[j].folded=true;
+   let g=0;while(T.stage!=='showdown'&&g++<300){const i=T.toAct;if(T.stage==='draw')T.act(T.seats[i].id,'draw',[]);else T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}
+   a.deepEqual(T.hand.board,['Ah','Ad','As']);const r=T.hand.results;a.equal(r[0].seat,ids[0]);a.equal(r[0].hand,'Full');});
  t('évaluateur 5 et 7 cartes sans board',()=>{a.equal(bestHand('Ah Ad As Kc Kd'.split(' '),[],'draw').name,'Full');a.equal(bestHand('2h 3h 9h Jh Kh'.split(' '),[],'draw').name,'Couleur');
    a.equal(bestHand('2c 3d 4h 5s 6c Kd Kh'.split(' '),[],'stud').name,'Quinte');a.equal(bestHand('9s 9h 2c 2d 7s Ks 3h'.split(' '),[],'stud').name,'Double paire');});
  t('donneur déconnecté -> jeu précédent',()=>{const T=mk();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'stud');clearTimeout(T.timer);play(T);T.startHand();a.equal(T.stage,'choosing');

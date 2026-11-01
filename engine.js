@@ -23,8 +23,8 @@ const cmp=(a,b)=>{for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]||
 function combos(a,k){const r=[];(function f(s,c){if(c.length===k){r.push(c.slice());return;}for(let i=s;i<a.length;i++){c.push(a[i]);f(i+1,c);c.pop();}})(0,[]);return r;}
 function bestOf(list){let b=null;for(const c of list){const e=eval5(c);if(!b||cmp(e.score,b.score)>0)b=e;}return b;}
 const isOmaha=v=>v==='omaha'||v==='omahanl';
-const VARS=['holdem','omaha','omahanl','draw','stud'],BET=['preflop','flop','turn','river','seventh'];
-const HOLEN={draw:5,stud:3};
+const VARS=['holdem','omaha','omahanl','draw','huard','stud'],BET=['preflop','flop','turn','river','seventh'];
+const HOLEN={draw:5,huard:5,stud:3};
 // main visible (stud) : seules paires / brelans / carrés comptent, puis hauteur
 function upScore(cs){const v=cs.map(rv).sort((a,b)=>b-a),cnt={};v.forEach(x=>cnt[x]=(cnt[x]||0)+1);const g=Object.entries(cnt).map(([k,n])=>[n,+k]).sort((a,b)=>b[0]-a[0]||b[1]-a[1]);
   const cat=g[0][0]===4?7:g[0][0]===3?3:g[0][0]===2&&g[1]&&g[1][0]===2?2:g[0][0]===2?1:0;return [cat,...g.map(x=>x[1])];}
@@ -82,13 +82,13 @@ class Table{
     this.variant=VARS.includes(this.mode)?this.mode:'holdem';this.deal();return true;
   }
   nextDealer(){if(this.button<0)return -1;return this.next(this.button,s=>s.chips>0&&!s.sitOut);}
-  chooseVariant(id,v,auto,blinds){if(this.stage!=='choosing'||this.seats[this.chooser]?.id!==id)return false;if(!(this.dealerChoice?['holdem','omaha','draw','stud']:VARS).includes(v))return false;
-    clearTimeout(this.timer);if(this.dealerChoice&&blinds!=null)this.setBlinds(blinds,auto);this.variant=v;if(this.dealerChoice&&this.mode!=='dealer')this.mode=v;this.chosenAt=Date.now();this.log.push((auto?'(délai) ':'')+this.seats[this.chooser].name+' choisit '+({omaha:'Omaha PL',omahanl:'Omaha NL',draw:'Five Card Draw Plus',stud:'Stud'}[v]||"Hold'em"));this.deal();return true;}
+  chooseVariant(id,v,auto,blinds){if(this.stage!=='choosing'||this.seats[this.chooser]?.id!==id)return false;if(!(this.dealerChoice?['holdem','omaha','draw','huard','stud']:VARS).includes(v))return false;
+    clearTimeout(this.timer);if(this.dealerChoice&&blinds!=null)this.setBlinds(blinds,auto);this.variant=v;if(this.dealerChoice&&this.mode!=='dealer')this.mode=v;this.chosenAt=Date.now();this.log.push((auto?'(délai) ':'')+this.seats[this.chooser].name+' choisit '+({omaha:'Omaha PL',omahanl:'Omaha NL',draw:'Five Card Draw Plus',huard:'Huardesque',stud:'Stud'}[v]||"Hold'em"));this.deal();return true;}
   deal(){
     const n=HOLEN[this.variant]||(isOmaha(this.variant)?4:2),deck=newDeck();
     const pl={};this.seats.forEach((s,i)=>{if(s&&s.chips>0&&!s.sitOut)pl[i]={hole:[],up:[],bet:0,total:0,folded:false,allin:false,acted:false};});
     for(let r=0;r<n;r++)for(const i in pl){pl[i].hole.push(deck.pop());pl[i].up.push(this.variant==='stud'&&r===2);}
-    this.hand={deck,muck:[],board:[],pl,currentBet:0,minRaise:this.bb,results:null};if(this.variant==='draw'){this.hand.board.push(deck.pop());this.hand.hidden=deck.pop();}this.stage='preflop';
+    this.hand={deck,muck:[],board:[],pl,currentBet:0,minRaise:this.bb,results:null};if(this.variant==='draw'){this.hand.board.push(deck.pop());this.hand.hidden=deck.pop();}else if(this.variant==='huard'){this.hand.board.push(deck.pop());this.hand.hidden2=[deck.pop(),deck.pop()];}this.stage='preflop';
     const ids=Object.keys(pl).map(Number);
     if(this.variant==='stud'){// pas de blindes : bring-in 100 par la plus petite carte visible (♣<♦<♥<♠), complément à 200
       const lo=ids.slice().sort((a,b)=>{const x=pl[a].hole[2],y=pl[b].hole[2];return rv(x)-rv(y)||SUITV[x[1]]-SUITV[y[1]];})[0];
@@ -134,17 +134,17 @@ class Table{
     const done=canAct.every(([,p])=>p.acted&&p.bet===h.currentBet)||(canAct.length<=1&&canAct.every(([,p])=>p.bet>=h.currentBet));
     if(!done)return;
     for(const p of Object.values(h.pl)){p.bet=0;p.acted=false;if(p.last&&!['fold','allin'].includes(p.last.type))p.last=null;}h.turnStart=Date.now();h.currentBet=0;h.minRaise=this.bb;
-    const nx=(this.variant==='draw'?{preflop:'draw',turn:'river',river:'showdown'}:this.variant==='stud'?{preflop:'flop',flop:'turn',turn:'river',river:'seventh',seventh:'showdown'}:{preflop:'flop',flop:'turn',turn:'river',river:'showdown'})[this.stage];
+    const nx=(this.variant==='draw'?{preflop:'draw',turn:'river',river:'showdown'}:this.variant==='huard'?{preflop:'draw',turn:'river',river:'seventh',seventh:'showdown'}:this.variant==='stud'?{preflop:'flop',flop:'turn',turn:'river',river:'seventh',seventh:'showdown'}:{preflop:'flop',flop:'turn',turn:'river',river:'showdown'})[this.stage];
     if(nx==='showdown')return this.finish();
     this.stage=nx;
     if(nx==='draw'){this.toAct=this.next(this.button,(s,j)=>h.pl[j]&&!h.pl[j].folded);this.scheduleAway();return;}
     if(this.variant==='stud'){for(const [,p] of live){p.hole.push(h.deck.pop());p.up.push(nx!=='seventh');}this.toAct=this.studFirst();}
-    else{if(this.variant==='draw'){if(h.hidden){h.board.push(h.hidden);h.hidden=null;this.log.push('Carte centrale retournée');}}else h.board.push(...h.deck.splice(-(nx==='flop'?3:1)));
+    else{if(this.variant==='draw'){if(h.hidden){h.board.push(h.hidden);h.hidden=null;this.log.push('Carte centrale retournée');}}else if(this.variant==='huard'){if(h.hidden2&&h.hidden2.length){h.board.push(h.hidden2.shift());this.log.push('Carte cachée retournée ('+(3-h.hidden2.length-1)+'/2)');}}else h.board.push(...h.deck.splice(-(nx==='flop'?3:1)));
     this.toAct=this.next(this.button,(s,j)=>h.pl[j]&&!h.pl[j].folded&&!h.pl[j].allin);}
     if(canAct.length<=1)return this.checkRound();}
   finish(){const h=this.hand;const live=Object.keys(h.pl).filter(j=>!h.pl[j].folded).map(Number);const res=[];
     if(live.length===1){const w=live[0],a=this.potTotal();this.seats[w].chips+=a;res.push({seat:w,amount:a,name:this.seats[w].name});this.log.push(this.seats[w].name+' remporte '+a);}
-    else{if(h.hidden){h.board.push(h.hidden);h.hidden=null;}if(!['draw','stud'].includes(this.variant))while(h.board.length<5)h.board.push(h.deck.pop());
+    else{if(h.hidden){h.board.push(h.hidden);h.hidden=null;}if(h.hidden2){h.board.push(...h.hidden2);h.hidden2=[];}if(!['draw','huard','stud'].includes(this.variant))while(h.board.length<5)h.board.push(h.deck.pop());
       const ev={};for(const j of live)ev[j]=bestHand(h.pl[j].hole,h.board,this.variant);
       const pots=sidePots(Object.entries(h.pl).map(([j,p])=>({id:+j,amount:p.total,folded:p.folded})));
       for(const pot of pots){let best=null,ws=[];for(const j of pot.eligible){const c=best?cmp(ev[j].score,best):1;if(c>0){best=ev[j].score;ws=[j];}else if(c===0)ws.push(j);}
@@ -178,7 +178,7 @@ class Table{
   view(id){const me=this.seatOf(id),h=this.hand;
     return {turnStart:h?h.turnStart:0,stage:this.stage,mode:this.mode,pendingMode:this.pendingMode||null,variant:this.variant,sb:this.sb,bb:this.bb,button:this.button,toAct:this.toAct,me,
       lastAction:this.lastAction||'',nextDealer:this.nextDealer(),chooser:this.stage==='choosing'?this.chooser:-1,chosenAt:this.chosenAt||0,now:Date.now(),choiceDeadline:this.choiceDeadline,log:this.log.slice(-8),
-      board:h?(h.hidden&&this.stage!=='showdown'?[...h.board,'??']:h.board):[],pot:h?this.potTotal():0,currentBet:h?h.currentBet:0,results:h?h.results:null,
+      board:h?(this.stage==='showdown'?h.board:[...h.board,...(h.hidden?['??']:[]),...(h.hidden2||[]).map(()=>'??')]):[],pot:h?this.potTotal():0,currentBet:h?h.currentBet:0,results:h?h.results:null,
       limits:(h&&me===this.toAct&&me>=0&&BET.includes(this.stage))?this.limits(me):null,
       spectator:me<0,records:this.records(),seats:this.seats.map((s,i)=>s&&{name:s.name,avatar:s.avatar||null,rebuys:s.rebuys||0,rebuyTotal:s.rebuyTotal||0,engaged:s.engaged||CONFIG.STACK,bilan:s.chips+(h&&h.pl[i]&&this.stage!=='showdown'?h.pl[i].total:0)-(s.engaged||CONFIG.STACK),last:h&&h.pl[i]?h.pl[i].last||null:null,chips:s.chips,connected:s.connected,
         inHand:!!(h&&h.pl[i]),folded:h&&h.pl[i]?h.pl[i].folded:false,allin:h&&h.pl[i]?h.pl[i].allin:false,bet:h&&h.pl[i]?h.pl[i].bet:0,
