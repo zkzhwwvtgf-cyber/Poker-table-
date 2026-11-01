@@ -453,7 +453,7 @@ function effects(){if(!P){fx0();return;}const potEl=$('pot');fx0();
  // pot -> gagnant
  if(S.stage==='showdown'&&P.stage!=='showdown'&&S.results)S.results.forEach(r=>{const el=document.querySelector(`[data-seat="${r.seat}"]`);if(el)fly(center(potEl),center(el),8);if(r.seat===S.me)toast('🏆 Tu gagnes '+fmt(r.amount)+' !');});if(S.results)winFx(potEl);}
 let RBV=1000;function rbHTML(id){return `<div id="${id}" class="rebuy"><div class="rbopts" role="radiogroup" aria-label="Montant de la recave">${[1000,2000,3000,4000,5000].map(v=>`<button type="button" role="radio" aria-checked="${v===RBV}" class="${v===RBV?'on':''}" onclick="RBV=${v};render()">${v/1000}k</button>`).join('')}</div><button type="button" class="go" onclick="sock.emit('rebuy',RBV);${id==='rebuyMenu'?'closeMenu();':''}">💰 Se recaver · ${fmt(RBV)}</button></div>`;}
-function render(){requestAnimationFrame(()=>window.placeDeco&&placeDeco());const s=S,me=s.me;nowSeen=new Set();$('code').textContent='Table '+s.code+' · blindes '+s.sb+'/'+s.bb;$('hostbar').style.display=s.host?'block':'none';$('guestbar').style.display=s.host?'none':'block';$('dangerbar').style.display=s.host?'block':'none';
+function render(){requestAnimationFrame(()=>window.placeBar&&placeBar());const s=S,me=s.me;nowSeen=new Set();$('code').textContent='Table '+s.code+' · blindes '+s.sb+'/'+s.bb;$('hostbar').style.display=s.host?'block':'none';$('guestbar').style.display=s.host?'none':'block';$('dangerbar').style.display=s.host?'block':'none';
  const pend=s.pendingMode?' · ensuite : '+MN[s.pendingMode]:'';
  {const started=s.button>=0||s.stage!=='waiting',nd=s.nextDealer,mine=nd>=0&&nd===me,ndn=nd>=0&&s.seats[nd]?s.seats[nd].name:'';
  $('badge').innerHTML=s.stage==='choosing'?'<span class="badge wait">🎲 '+(s.seats[s.chooser]?esc(s.seats[s.chooser].name)+' choisit le jeu…':'Choix du donneur…')+'</span>':started?'<span class="badge">'+(GL[s.variant]||VN[s.variant])+'</span><span class="badge blb">Blindes '+s.sb+'/'+s.bb+'</span>':'';
@@ -592,10 +592,6 @@ setInterval(()=>{const e=$('cd');if(e&&S)e.textContent='('+Math.max(0,Math.ceil(
 @media (max-height:500px){#game .dcp.mine{padding:5px!important;gap:2px!important}#game .dcp.mine>b{font-size:11px}#game .dcg{gap:2px!important}#game .dcg button{min-height:0;padding:3px 7px!important}#game .dcg .gic{width:20px;height:20px;font-size:13px}#game .dcg .gtx{flex-direction:row;align-items:baseline;gap:6px}}
 #game .dcn{display:flex;align-items:center;gap:8px;justify-content:center}#game .dcnm{font:900 22px Inter;color:#ffd24a;text-shadow:0 2px 0 #6a4300,0 0 12px #f5c84a66;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#game .dcd{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#fff;color:#111;font:900 13px Inter;border:2px solid #f5c84a;flex:none}#game .dcp.wait .dcd{width:17px;height:17px;font-size:10px;vertical-align:middle}#game .dcnw{color:#ffd24a}#game .dcp.mine>b{color:#fff}@media (max-height:500px){#game .dcnm{font-size:17px}#game .dcd{width:18px;height:18px;font-size:11px}}
 /* décor : 4 autocollants posés sur le parquet, symétriques autour de la table, jamais cliquables */
-#deco{position:fixed;inset:0;z-index:0;pointer-events:none}
-#deco img{position:absolute;width:var(--dz,56px);height:var(--dz,56px);opacity:0;pointer-events:none;user-select:none;-webkit-user-drag:none;filter:saturate(.75) brightness(.92) drop-shadow(0 3px 4px #0007);transition:opacity .3s}
-#deco.on img{opacity:.82}
-#deco img:nth-child(odd){transform:rotate(-8deg)}#deco img:nth-child(even){transform:rotate(8deg)}
 /* boutons actifs harmonisés : même pilule violette, même liseré doré, même ombre */
 #game #menuBtn,#game .tbtn,#game #invBtn{background:linear-gradient(180deg,#3b1f66,#26114a)!important;border:1.5px solid #ffc83d99!important;box-shadow:0 3px 0 #12062a,0 0 10px #ffc83d33!important;color:#fff}
 #game .tbtn{width:40px;height:40px}
@@ -604,26 +600,19 @@ setInterval(()=>{const e=$('cd');if(e&&S)e.textContent='('+Math.max(0,Math.ceil(
 #game #invBtn span{margin:0!important;background:none!important;box-shadow:none!important;padding:0!important;font:800 13px Inter!important}
 </style><script>
 // décor : place les 4 autocollants aux 4 diagonales, à égale distance du rail, sans toucher aucun élément actif
-function placeInv(){const I=document.getElementById('invBtn'),M=document.getElementById('menuBtn');if(!I||!M||!M.offsetParent)return;if(innerWidth>innerHeight){I.style.removeProperty('top');I.style.removeProperty('left');I.classList.remove('nearm');const C=document.getElementById('code');if(C)C.style.maxWidth='';return;}I.classList.add('nearm');const m=M.getBoundingClientRect(),g=I.getBoundingClientRect();I.style.setProperty('top',(m.top+(m.height-g.height)/2)+'px','important');I.style.setProperty('left',(m.left-g.width-8)+'px','important');const C=document.getElementById('code');if(C){const c=C.getBoundingClientRect();C.style.maxWidth=Math.max(60,m.left-g.width-14-c.left)+'px';C.style.overflow='hidden';C.style.textOverflow='ellipsis';C.style.whiteSpace='nowrap';}}
-let _pdT=0;function placeDeco(){const _n=Date.now();if(_n-_pdT<300)return;_pdT=_n;placeInv();const D=document.getElementById('deco'),R=document.querySelector('#game .rail');if(!D||!R||!R.offsetParent){D&&D.classList.remove('on');return;}
- const r=R.getBoundingClientRect(),W=innerWidth,H=innerHeight,cx=(r.left+r.right)/2,cy=(r.top+r.bottom)/2,a=r.width/2,b=r.height/2;
- const sz0=Math.round(Math.max(40,Math.min(84,Math.min(W,H)*.12)));let sz=sz0,res=null;
- const obs=[...document.querySelectorAll('#game .seat,#game .seat *,#menuBtn,#invBtn,.tbtn,#vbox,#bar,#code,.dcp,#game>.loc')].map(e=>e.getBoundingClientRect()).filter(q=>q.width&&q.height);
- const pad=3,hit=(x,y)=>{const L=x-sz/2-pad,T=y-sz/2-pad,Rr=x+sz/2+pad,B=y+sz/2+pad;if(L<2||T<2||Rr>W-2||B>H-2)return true;
-  for(const q of obs)if(L<q.right&&Rr>q.left&&T<q.bottom&&B>q.top)return true;
-  // hors du rail : le rail est un « stade » (rectangle aux bouts arrondis) ; distance carré ↔ noyau du stade < rayon + 6 px = chevauchement
-  const rr=Math.min(a,b),kx=a-rr,ky=b-rr,gx=Math.max(0,Math.abs(x-cx)-kx-sz/2-pad),gy=Math.max(0,Math.abs(y-cy)-ky-sz/2-pad);return Math.hypot(gx,gy)<rr+6;};
- const sc=(dx,dy)=>((dx)/(a+sz/2))**2+((dy)/(b+sz/2))**2+Math.abs(dx/(a||1)-dy/(b||1))*.8;for(sz=sz0;sz>=38;sz-=3){let best=null,top=null;
- for(let dx=0;dx<=W/2;dx+=3){let t=null,u=null;for(let dy=0;dy<=H/2;dy+=3){if(!hit(cx-dx,cy-dy)&&!hit(cx+dx,cy-dy)){const v=sc(dx,dy);if(!t||v<t.v)t={dy,v};}
-   if(!hit(cx-dx,cy+dy)&&!hit(cx+dx,cy+dy)){const v=sc(dx,dy);if(!u||v<u.v)u={dy,v};}}
-   if(t&&(!top||t.v<top.sc))top={dx,ty:t.dy,by:null,sc:t.v};
-   if(t&&u){const v=t.v+u.v+Math.abs(t.dy-u.dy)/(b||1)*.3;if(!best||v<best.sc)best={dx,ty:t.dy,by:u.dy,sc:v};}}
-   if(best){res=best;break;}if(!res&&top)res={...top,sz};}
- const best=res;if(best&&!best.sz)best.sz=sz;if(best){sz=best.sz||sz;D.style.setProperty('--dz',sz+'px');}
-
- if(!best){D.classList.remove('on');return;}
- [...D.children].forEach((im,i)=>{const sx=i%2?1:-1,sy=i<2?-1:1;im.style.left=(cx+sx*best.dx-sz/2)+'px';im.style.top=(cy+(sy<0?-best.ty:(best.by??0))-sz/2)+'px';im.style.display=(sy>0&&best.by==null)?'none':'';});D.classList.add('on');}
-addEventListener('resize',()=>requestAnimationFrame(placeDeco));setInterval(placeDeco,3000);
+function placeInv(){const I=document.getElementById('invBtn'),M=document.getElementById('menuBtn');if(!I||!M||!M.offsetParent)return;if(getComputedStyle(I).display==='none')return;I.classList.add('nearm');const m=M.getBoundingClientRect(),g=I.getBoundingClientRect();I.style.setProperty('top',(m.top+(m.height-g.height)/2)+'px','important');I.style.setProperty('left',(m.left-g.width-8)+'px','important');const C=document.getElementById('code');if(C){const c=C.getBoundingClientRect();C.style.maxWidth=Math.max(60,m.left-g.width-14-c.left)+'px';C.style.overflow='hidden';C.style.textOverflow='ellipsis';C.style.whiteSpace='nowrap';}}
+// Bar en haut : étagère décorative pleine largeur (zone de jeu), le HUD est poussé dessous si besoin
+let _pdT=0;function placeBar(){const _n=Date.now();if(_n-_pdT<250)return;_pdT=_n;placeInv();
+ const D=document.getElementById('deco'),G=document.getElementById('game');if(!D||!G)return;
+ if(getComputedStyle(G).display==='none'){D.classList.remove('on');return;}
+ const W=innerWidth,H=innerHeight,land=W>H,B=document.getElementById('bar'),br=B&&getComputedStyle(B).display!=='none'?B.getBoundingClientRect():null;
+ const side=br&&br.top<10&&br.left>W/3;const w=side?br.left:W;const h=land&&H<600?42:(W>=1000?70:64);
+ D.style.width=w+'px';D.style.setProperty('--bh',h+'px');D.classList.add('on');
+ const T=G.querySelector('.top'),TW=document.getElementById('tw');G.style.removeProperty('padding-top');if(TW)TW.style.removeProperty('height');
+ const t=T.getBoundingClientRect().top,need=Math.ceil(h+6-t);
+ if(need>0){const base=parseFloat(getComputedStyle(G).paddingTop)||0;G.style.setProperty('padding-top',(base+need)+'px','important');
+  if(land&&TW){const th=TW.getBoundingClientRect().height;TW.style.setProperty('height',Math.max(160,th-need)+'px','important');}}}
+addEventListener('resize',()=>{_pdT=0;requestAnimationFrame(placeBar)});setInterval(placeBar,2000);
 </script><style>
 /* Stud : ma main — visibles (dorées, 👁) vs cachées (atténuées, abaissées, 🔒) */
 #game .seat.me .cards .sv{position:relative}
@@ -632,5 +621,15 @@ addEventListener('resize',()=>requestAnimationFrame(placeDeco));setInterval(plac
 #game .seat.me .cards .sv::after{position:absolute;top:-7px;right:-4px;z-index:2;font-size:10px;line-height:1;padding:2px 3px;border-radius:7px;pointer-events:none}
 #game .seat.me .cards .upw.sv::after{content:'👁';background:#ffc83d;box-shadow:0 1px 3px #0008}
 #game .seat.me .cards .dnw.sv::after{content:'🔒';right:auto;left:-4px;background:#1b0e33;border:1px solid #ffffff55}
+</style>
+<style>
+/* Bar en haut : planche bois foncé, chant clair, filet or, ombre douce */
+#deco{position:fixed;top:0;left:0;height:calc(var(--bh,64px) + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);box-sizing:border-box;z-index:4;pointer-events:none;display:none;align-items:flex-end;justify-content:space-evenly;
+ background:linear-gradient(180deg,transparent calc(100% - 10px),#c08a52 calc(100% - 10px),#9a6535 calc(100% - 3px),#ffc83d calc(100% - 3px),#ffc83d calc(100% - 2px),#4a2a12 calc(100% - 2px)),
+ repeating-linear-gradient(90deg,#00000000 0 37px,#0000001f 37px 39px,#00000000 39px 83px,#ffffff08 83px 86px),linear-gradient(180deg,#2a160a,#3d2212 70%,#2e180b);
+ box-shadow:0 6px 14px #000a}
+#deco.on{display:flex}
+@media (orientation:landscape) and (max-height:500px){#game .tablewrap .seat>*{zoom:.88}#game #menuBtn,#game #invBtn{height:34px!important;min-height:0!important}#deco img{margin-bottom:8px}}
+#deco img{height:calc(var(--bh,64px) - 12px);width:auto;max-width:22%;margin-bottom:9px;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 3px 2px #0009)}
 </style>
 </body></html>
