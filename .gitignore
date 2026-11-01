@@ -6,3 +6,6 @@ url.txt
 lt.log
 tm.log
 .env
+bilan.json
+bilan-sauvegarde-*.json
+bilan.json.tmp

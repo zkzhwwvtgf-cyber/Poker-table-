@@ -1,4 +1,4 @@
-const express=require('express'),http=require('http'),{Server}=require('socket.io'),crypto=require('crypto'),{Table,CONFIG}=require('./engine');
+const express=require('express'),http=require('http'),{Server}=require('socket.io'),crypto=require('crypto'),{Table,CONFIG}=require('./engine'),BIL=require('./bilan');BIL.load();
 const app=express();app.use(require('compression')());const fs=require('fs');const IDX=fs.readFileSync(__dirname+'/public/index.html','utf8');
 const esc=x=>String(x).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const SITE='https://poker-stephane.onrender.com';
@@ -12,10 +12,10 @@ const GRACE=+process.env.GRACE_MS||120000,AWAY=+process.env.AWAY_MS||30000;
 const srv=http.createServer(app),io=new Server(srv,{cors:{origin:'*'}});const rooms={};
 // Sessions propres : aucune restauration de tables au démarrage, rien n'est sauvegardé.
 const code=()=>crypto.randomBytes(4).toString('hex').slice(0,6).toUpperCase();
-function push(r){for(const [sid,tok] of Object.entries(r.sockets)){const s=io.sockets.sockets.get(sid);if(s)s.emit('state',{...r.t.view(tok),code:r.code,host:r.host===tok});}}
+function push(r){syncB(r);for(const [sid,tok] of Object.entries(r.sockets)){const s=io.sockets.sockets.get(sid);if(s)s.emit('state',{...r.t.view(tok),code:r.code,host:r.host===tok});}}
 io.on('connection',sock=>{let room=null,tok=null;
   sock.on('create',({name,sb,bb,token},cb)=>{const mode='holdem';const c=code();const t=new Table({mode,sb:+sb||CONFIG.SB,bb:+bb||CONFIG.BB,awayDelay:AWAY,dealerChoice:true,choiceTimeout:+process.env.CHOICE_MS||15000});
-    const r=rooms[c]={code:c,t,host:token,sockets:{},grace:{}};t.onChange=()=>push(r);cb&&cb({code:c});});
+    const r=rooms[c]={code:c,t,host:token,sockets:{},grace:{}};t.onChange=()=>push(r);wrapB(r);cb&&cb({code:c});});
   sock.on('join',({code:c,name,token,avatar,photo},cb)=>{const r=rooms[(c||'').toUpperCase()];if(!r)return cb&&cb({error:CLOSED,closed:true});
     tok=String(token||sock.id);let i=r.t.seatOf(tok);const av0=cleanAv(avatar),ph=cleanPh(photo),av=ph?'photo':av0;
     // règle unique des pseudos (serveur) : reconnexion du même jeton -> nom du siège conservé
@@ -48,10 +48,12 @@ io.on('connection',sock=>{let room=null,tok=null;
     io.to(msg.to).emit('vsig',{from:sock.id,data:msg.data});});
   // changement d'avatar en cours de partie (portrait, emoji, photo ou initiale)
   sock.on('avatar',g((o,cb)=>{const i=room.t.seatOf(tok);if(i<0||!o||typeof o!=='object')return;const ph=cleanPh(o.photo),av=ph?'photo':cleanAv(o.avatar);const bad=bindErr(room.t.seats[i].name,av);if(bad){typeof cb==='function'?cb({error:bad}):sock.emit('toast',bad);return;}room.t.seats[i].avatar=av;if(typeof cb==='function')cb({ok:true});room.photos=room.photos||{};if(ph)room.photos[tok]=ph;else delete room.photos[tok];sendPhotos(room);}));
+  sock.on('comptes',(x,cb)=>{if(typeof cb==='function')cb({total:BIL.list(),canReset:!!room&&room.host===tok});});
+  sock.on('comptesReset',(x,cb)=>{if(typeof cb!=='function')return;if(!room||room.host!==tok)return cb({error:'Seul l\'hôte de la table peut remettre le bilan à zéro'});try{const f=BIL.reset();room.t.log.push('Bilan général remis à zéro (sauvegarde '+f+')');cb({ok:true,file:f,total:BIL.list()});push(room);}catch(e){cb({error:'Erreur : bilan non modifié'});}});
   sock.on('rebuy',g(amount=>room.t.rebuy(tok,amount===undefined?1000:amount)));
   sock.on('disconnect',()=>{if(!room)return;const r=room;delete r.sockets[sock.id];if(r.voice&&r.voice[sock.id]){delete r.voice[sock.id];sendVoice(r);}
     if(!Object.values(r.sockets).includes(tok)&&r.t.seatOf(tok)>=0){r.t.setConnected(tok,false);clearTimeout(r.grace[tok]);
-      r.grace[tok]=setTimeout(()=>{delete r.grace[tok];if(r.t.seatOf(tok)<0||r.t.seats[r.t.seatOf(tok)].connected)return;r.t.removePlayer(tok);
+      r.grace[tok]=setTimeout(()=>{delete r.grace[tok];if(r.t.seatOf(tok)<0||r.t.seats[r.t.seatOf(tok)].connected)return;endB(r,r.t.seats[r.t.seatOf(tok)]);r.t.removePlayer(tok);
         if(r.host===tok){const n=r.t.seats.find(x=>x&&x.connected)||r.t.seats.find(x=>x);if(n){r.host=n.id;r.t.log.push(n.name+' devient hôte');}}cleanup(r);},GRACE);}
     cleanup(r);});
 });
@@ -72,5 +74,15 @@ function cleanPh(p){return typeof p==='string'&&p.length<=21000&&/^data:image\/(
 function sendPhotos(r){const m={};(r.t.seats||[]).forEach((s,i)=>{if(s&&s.avatar==='photo'&&r.photos&&r.photos[s.id])m[i]=r.photos[s.id];});io.to('r'+r.code).emit('photos',m);}
 const VMAX=+process.env.VMAX||12000,VRATE=+process.env.VRATE||60;
 function sendVoice(r){const l=Object.entries(r.voice||{}).filter(([sid])=>r.sockets[sid]).map(([sid,v])=>({sid,seat:r.t.seatOf(r.sockets[sid]),muted:v.muted}));io.to('r'+r.code).emit('voice',l);}
-function cleanup(r){if(!rooms[r.code])return;if(!r.t.seats.some(x=>x)&&!Object.keys(r.sockets).length||!r.t.seats.some(x=>x)&&!Object.keys(r.grace).length&&!Object.keys(r.sockets).length){clearTimeout(r.t.timer);clearTimeout(r.t.awayT);delete rooms[r.code];return;}push(r);}
+function cleanup(r){if(!rooms[r.code])return;if(!r.t.seats.some(x=>x)&&!Object.keys(r.sockets).length||!r.t.seats.some(x=>x)&&!Object.keys(r.grace).length&&!Object.keys(r.sockets).length){clearTimeout(r.t.timer);clearTimeout(r.t.awayT);delete rooms[r.code];for(const id of BIL.ids(r.code))BIL.commit(id);return;}push(r);}
 srv.listen(process.env.PORT||3000,'0.0.0.0',()=>console.log('Poker sur :'+(process.env.PORT||3000)));
+// ---- comptes : chaque siège a un identifiant de partie (pid) ; reprise/reconnexion gardent le même siège donc le même pid
+function netOf(t,i){const s=t.seats[i],h=t.hand;return s.chips+(h&&h.pl[i]&&t.stage!=='showdown'?h.pl[i].total:0)-(s.engaged||CONFIG.STACK);}
+function syncB(r){const seen=new Set();r.t.seats.forEach((s,i)=>{if(!s)return;if(!s.pid)s.pid=r.code+'-'+crypto.randomBytes(6).toString('hex');seen.add(s.pid);BIL.live(s.pid,r.code,nameKey(s.name),s.name,netOf(r.t,i));});
+  for(const id of BIL.ids(r.code))if(!seen.has(id))BIL.commit(id);}
+function endB(r,s){if(!s||!s.pid)return;BIL.live(s.pid,r.code,nameKey(s.name),s.name,s.chips-(s.engaged||CONFIG.STACK));BIL.commit(s.pid);s.pid=null;}
+// remise des piles à 5 000 = fin de partie pour tous : on solde puis on repart sur une nouvelle partie
+function wrapB(r){const t=r.t,fr=t.fullReset.bind(t),rs=t.resetStacks.bind(t);
+  const all=()=>{syncB(r);t.seats.forEach(s=>{if(s&&s.pid){BIL.commit(s.pid);s.pid=null;}});};
+  t.fullReset=()=>{all();return fr();};
+  t.resetStacks=()=>{if(t.stage==='waiting'||t.stage==='showdown')all();return rs();};}

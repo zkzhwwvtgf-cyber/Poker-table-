@@ -114,7 +114,7 @@ button.red{background:linear-gradient(180deg,#ff6a6a,#c81e1e);color:#fff;box-sha
 .seat.win::after{content:'🏆';position:absolute;top:-18px;right:-4px;font-size:22px;animation:bob 1s infinite}
 .dealer{position:absolute;right:-9px;bottom:-9px;z-index:3;background:#fff;color:#000;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:900;line-height:22px;box-shadow:0 0 0 2px #ffc83d,0 2px 6px #000}
 .eng{font-size:9.5px;font-weight:700;margin-top:3px;display:inline-flex;gap:4px;background:#000a;border-radius:8px;padding:2px 6px;white-space:nowrap}
-.pos{color:#7dff6a}.neg{color:#ff6a7f}
+.pos{color:#7dff6a}.neg{color:#ff6a7f}#cpt{z-index:400}.cptp{max-height:calc(100dvh - 24px);overflow-y:auto;box-sizing:border-box}table.bilan.cpt td:last-child{font-weight:900;white-space:nowrap}.cptq{margin-top:10px;padding:10px;border:1px solid #ff6a7f88;border-radius:10px}.cptb{display:flex;gap:8px}.cptb button{flex:1}
 .bet{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:900;background:#000b;border-radius:999px;padding:2px 8px 2px 3px;margin-top:3px}
 .act{position:absolute;left:50%;top:-6px;transform:translate(-50%,-100%);font-weight:900;font-size:11px;padding:3px 9px;border-radius:999px;white-space:nowrap;z-index:5;letter-spacing:.5px;text-transform:uppercase}
 .act.pop{animation:pop .6s cubic-bezier(.2,1.6,.4,1)}@keyframes pop{0%{transform:translate(-50%,-100%) scale(.2)}}
@@ -370,12 +370,12 @@ body::before{animation:none!important;inset:0;background:radial-gradient(ellipse
 <div id="hostbar"><button onclick="closeMenu();openInvite()">📱 Inviter par SMS</button><button class="alt" onclick="closeMenu();copyLink()">🔗 Copier le lien</button><button class="alt" onclick="closeMenu();share()">📤 Partager</button>
 </div>
 <div id="rbmenu"></div><div id="guestbar"><button class="alt" onclick="closeMenu();copyLink()">🔗 Copier le lien</button><button class="alt" onclick="closeMenu();share()">📤 Partager</button></div>
-<button class="cyan" onclick="closeMenu();openBilan()">📊 Bilan</button><button class="alt" onclick="closeMenu();openAvatar()">🎭 Mon avatar</button>
+<button class="cyan" onclick="closeMenu();openBilan()">📊 Bilan</button><button class="cyan" onclick="closeMenu();openCpt()">📊 Comptes</button><button class="alt" onclick="closeMenu();openAvatar()">🎭 Mon avatar</button>
 <button type="button" id="vMenu" class="cyan" onclick="closeMenu();VOICE.on?vLeave():vJoin()">🎤 Rejoindre le vocal</button><label class="rmt"><input type="checkbox" id="mutebox" onchange="setMute(this.checked)"> 🔇 Son coupé</label><label class="rmt"><input type="checkbox" id="rmbox" onchange="setRM(this.checked)"> Animations réduites</label><div id="dangerbar" class="danger"><button class="red" onclick="if(confirm('Réinitialiser la table ? Toutes les piles reviennent à 5 000 et les compteurs à zéro.')){closeMenu();sock.emit('reset')}">♻ Réinitialiser la table</button></div>
 <button class="alt" onclick="closeMenu()">Fermer</button></div></div>
 <div class="modal" id="inv"><div class="panel"><h3>Inviter par SMS</h3><p style="font-size:13px;color:#ffd9f0">Le SMS part de <b>ton</b> téléphone, via ton appli Messages.</p>
 <input id="phone" type="tel" placeholder="+33 6 12 34 56 78 (optionnel)"><button class="pink" onclick="sendSms()">Ouvrir Messages</button><button class="alt" onclick="inv.style.display='none'">Fermer</button></div></div>
-<div class="modal" id="bil"><div class="panel"><h3>📊 Bilan</h3><div id="bilbody"></div><button class="alt" onclick="bil.style.display='none'">Fermer</button></div></div>
+<div class="modal" id="cpt" onclick="if(event.target===this)this.style.display='none'"><div class="panel cptp"><h3>📊 Comptes</h3><div id="cptbody"></div><button class="alt" onclick="$('cpt').style.display='none'">Fermer</button></div></div><div class="modal" id="bil"><div class="panel"><h3>📊 Bilan</h3><div id="bilbody"></div><button class="alt" onclick="bil.style.display='none'">Fermer</button></div></div>
 <script src="/socket.io/socket.io.js"></script><script src="/pre.js"></script><script>
 const $=id=>document.getElementById(id);
 // Sessions propres : jeton neuf à chaque ouverture, aucune restauration de siège
@@ -421,6 +421,17 @@ function bilanHTML(){const ps=S.seats.filter(x=>x);let te=0,ts=0,tn=0,tr=0,ib=0;
  const ok=tn===0;return `<table class="bilan"><thead><tr><th>Joueur</th><th>Engagé</th><th>Pile</th><th>Net</th><th>Rec.</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td>Total</td><td>${fmt(te)}</td><td>${fmt(ts+ib)}</td><td class="${ok?'pos':'neg'}">${sg(tn)}</td><td>${tr}</td></tr></tfoot><tbody class="b200"><tr><th colspan="5">💶 En euros (÷ 200)</th></tr>${ps.map(p=>`<tr><td>${p.name}</td><td colspan="4" class="${cl(p.bilan)}">${d200(p.bilan)} <span class="pct">50% appliqué</span></td></tr>`).join('')}</tbody></table><p style="font-size:12px;color:${ok?'#7dff6a':'#ff6a7f'}">${ok?'✔ Les comptes sont justes : total des piles = total engagé.':'⚠ Écart de '+sg(tn)}</p>${recHTML()}`;}
 function recHTML(){const R=S.records||{},b=R.bigPot,h=R.bestHand,f=R.bluff,w=R.wins;const row=(i,t,v)=>`<div class="rec"><span>${i}</span><b>${t}</b><em>${v||'—'}</em></div>`;
  return `<h4 class="rech">🌙 Records de la soirée</h4>`+row('💰','Plus gros pot',b&&b.name+' · '+fmt(b.amount))+row('🃏','Meilleure main abattue',h&&h.name+' · '+h.hand+' <small>'+(h.cards||[]).map(c=>(({T:'10',J:'V',Q:'D',K:'R'})[c[0]]||c[0])+SY[c[1]]).join(' ')+'</small>')+row('🎭','Roi du bluff',f&&f.name+' · '+f.count+' pot'+(f.count>1?'s':'')+' sans abattage')+row('🏆','Plus de mains gagnées',w&&w.name+' · '+w.count);}
+let CPT=null,CPTQ=false;const fe=a=>(a>0?'+':a<0?'−':'')+String(Math.abs(a)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+function cptHTML(){const row=(n,v,x)=>`<tr><td>${esc0(n)}${x?' <small>'+x+'</small>':''}</td><td class="${v>0?'pos':v<0?'neg':''}">${fe(v)}</td></tr>`;
+ const ps=(S&&S.seats||[]).filter(x=>x),t=CPT&&CPT.total||[];
+ return `<h4 class="rech">🎲 Cette partie</h4><table class="bilan cpt"><tbody>${ps.map(p=>row(p.name,p.bilan,p.rebuys?p.rebuys+' recave'+(p.rebuys>1?'s':''):'')).join('')||'<tr><td>Personne à table</td></tr>'}</tbody></table><small class="rbnote">Pile − 5 000 − recaves</small>`
+ +`<h4 class="rech">🏆 Bilan général</h4><table class="bilan cpt"><tbody>${t.map(p=>row(p.name,p.net,p.parties+' partie'+(p.parties>1?'s':''))).join('')||'<tr><td>Aucune partie terminée</td></tr>'}</tbody></table><small class="rbnote">Toutes les parties terminées. La partie en cours s'ajoute quand le joueur quitte la table, quand la table est réinitialisée ou fermée.</small>`
+ +(CPT&&CPT.canReset?(CPTQ?`<div class="cptq"><b>Remettre le bilan général à zéro ?</b><small class="rbnote">Une copie datée est gardée avant d'effacer.</small><div class="cptb"><button class="alt" onclick="CPTQ=false;drawCpt()">Annuler</button><button class="red" onclick="cptReset()">Confirmer</button></div></div>`:`<button class="red" onclick="CPTQ=true;drawCpt()">♻ Remettre le bilan général à zéro</button>`):'<small class="rbnote">Seul l\'hôte de la table peut remettre le bilan général à zéro.</small>');}
+function esc0(x){return String(x).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');}
+function drawCpt(){$('cptbody').innerHTML=cptHTML();}
+function loadCpt(){sock.emit('comptes',null,r=>{CPT=r;if($('cpt').style.display==='flex')drawCpt();});}
+function openCpt(){CPTQ=false;drawCpt();$('cpt').style.display='flex';loadCpt();}
+function cptReset(){sock.emit('comptesReset',null,r=>{CPTQ=false;if(r&&r.ok){CPT.total=r.total;toast('Bilan général remis à zéro (copie gardée)');}else toast(r&&r.error||'Erreur');drawCpt();});}
 function openBilan(){$('bilbody').innerHTML=bilanHTML();$('bil').style.display='flex';}
 const SY={s:'♠\uFE0E',h:'♥\uFE0E',d:'♦\uFE0E',c:'♣\uFE0E'};let seen=new Set(),nowSeen;
 const SP={s:'M50 4C38 22 8 38 8 62c0 14 11 23 23 23 7 0 12-3 15-7-1 7-4 13-10 18h28c-6-5-9-11-10-18 3 4 8 7 15 7 12 0 23-9 23-23C92 38 62 22 50 4z',h:'M50 94C30 76 4 58 4 32 4 16 16 5 29 5c10 0 17 6 21 14 4-8 11-14 21-14 13 0 25 11 25 27 0 26-26 44-46 62z',d:'M50 2L88 50 50 98 12 50z',c:'M50 4a21 21 0 0 0-17 33 21 21 0 1 0 12 32c-1 9-4 15-10 23h30c-6-8-9-14-10-23a21 21 0 1 0 12-32A21 21 0 0 0 50 4z'};
@@ -447,7 +458,7 @@ function winFx(potEl){if(document.documentElement.classList.contains('rm'))retur
 function center(el){const r=el.getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2];}
 function fly(from,to,n=4){for(let i=0;i<n;i++){const c=document.createElement('div');c.className='fly';c.style.left=(from[0]-10)+'px';c.style.top=(from[1]-10)+'px';document.body.appendChild(c);
  setTimeout(()=>{c.style.transform=`translate(${to[0]-from[0]+(Math.random()*16-8)}px,${to[1]-from[1]+(Math.random()*10-5)}px)`;},30+i*70);setTimeout(()=>{c.style.opacity=0},700+i*70);setTimeout(()=>c.remove(),1500+i*70);}}
-sock.on('state',s=>{requestAnimationFrame(()=>{const b=document.getElementById('bar');if(b)document.documentElement.style.setProperty('--barh',b.offsetHeight+'px');});if(S&&s.pendingMode&&s.pendingMode!==lastPending)toast('Prochaine main : '+MN[uiM(s.pendingMode)]);lastPending=s.pendingMode;
+sock.on('state',s=>{setTimeout(()=>{if($('cpt').style.display==='flex'&&!CPTQ){drawCpt();clearTimeout(window.cptT);window.cptT=setTimeout(loadCpt,800);}},0);requestAnimationFrame(()=>{const b=document.getElementById('bar');if(b)document.documentElement.style.setProperty('--barh',b.offsetHeight+'px');});if(S&&s.pendingMode&&s.pendingMode!==lastPending)toast('Prochaine main : '+MN[uiM(s.pendingMode)]);lastPending=s.pendingMode;
  if(S&&S.stage==='choosing'&&s.stage!=='choosing'){FLASH={until:Date.now()+2800,seat:s.button,v:s.variant};setTimeout(()=>S&&render(),2900);}else if(S&&S.mode!==s.mode&&!s.pendingMode&&s.stage==='waiting')toast('Variante : '+MN[s.mode]);P=S;S=s;runPre(s);render();effects();if($('bil').style.display==='flex')$('bilbody').innerHTML=bilanHTML();});
 function effects(){if(!P){fx0();return;}const potEl=$('pot');fx0();
  {const nh=S.stage==='preflop'&&['waiting','showdown','choosing'].includes(P.stage);if(nh)snd('deal');else if(S.board.length>P.board.length)snd('flip');
