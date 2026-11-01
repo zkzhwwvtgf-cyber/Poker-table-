@@ -17,7 +17,7 @@ io.on('connection',sock=>{let room=null,tok=null;
   sock.on('create',({name,sb,bb,token},cb)=>{const mode='holdem';const c=code();const t=new Table({mode,sb:+sb||CONFIG.SB,bb:+bb||CONFIG.BB,awayDelay:AWAY,dealerChoice:true,choiceTimeout:+process.env.CHOICE_MS||15000});
     const r=rooms[c]={code:c,t,host:token,sockets:{},grace:{}};t.onChange=()=>push(r);cb&&cb({code:c});});
   sock.on('join',({code:c,name,token,avatar,photo},cb)=>{const r=rooms[(c||'').toUpperCase()];if(!r)return cb&&cb({error:'Table introuvable'});
-    room=r;tok=String(token||sock.id);r.toks=r.toks||{};if(token)r.toks[tok]=1;let i=r.t.seatOf(tok);const nm=String(name||'Joueur').slice(0,14);const av=cleanAv(avatar),ph=cleanPh(photo);
+    room=r;tok=String(token||sock.id);r.toks=r.toks||{};if(token)r.toks[tok]=1;let i=r.t.seatOf(tok);const nm=(normName(name)||'Joueur').slice(0,14);const av=cleanAv(avatar),ph=cleanPh(photo);
     // reconnexion par le même pseudo pendant le délai de grâce : on reprend le siège (et sa pile)
     if(i<0){// seulement si le siège n'a pas de jeton (sinon il faut le même jeton) : pas de vol de siège
     const j=r.t.seats.findIndex(x=>x&&!x.connected&&x.name===nm&&!r.toks[x.id]);if(j>=0){const old=r.t.seats[j].id;clearTimeout(r.grace[old]);delete r.grace[old];if(r.host===old)r.host=tok;r.t.seats[j].id=tok;i=j;}}
@@ -51,6 +51,7 @@ io.on('connection',sock=>{let room=null,tok=null;
 });
 const REACT=['😂','😱','👏','🍀','🔥','😎','🤮'];
 const AVS=['p:stephane','p:david','p:john','p:thomas','p:fred','p:lolo','🦊','🐼','🐯','🦁','🐸','🐵','🐙','🦄','🐺','🐻','🐨','🐷','😎','🤠','🥷','🧙','👑','🎩','💎','🔥','🍀','🎲','🃏','🚀'];
+function normName(n){const t=String(n||'').trim(),k=t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return k==='stephane'?'Steph':k==='david'?'Dave':t;}
 function cleanAv(a){return AVS.includes(a)?a:null;}
 function cleanPh(p){return typeof p==='string'&&p.length<=21000&&/^data:image\/(webp|jpeg);base64,[A-Za-z0-9+\/=]+$/.test(p)?p:null;}
 // photos envoyées à part (pas dans chaque état) : indexées par siège
