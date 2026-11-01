@@ -48,7 +48,7 @@ io.on('connection',sock=>{let room=null,tok=null;
     cleanup(r);});
 });
 const REACT=['😂','😱','👏','🍀','🔥','😎'];
-const AVS=['🦊','🐼','🐯','🦁','🐸','🐵','🐙','🦄','🐺','🐻','🐨','🐷','😎','🤠','🥷','🧙','👑','🎩','💎','🔥','🍀','🎲','🃏','🚀'];
+const AVS=['p:stephane','p:david','p:john','p:thomas','p:fred','p:lolo','🦊','🐼','🐯','🦁','🐸','🐵','🐙','🦄','🐺','🐻','🐨','🐷','😎','🤠','🥷','🧙','👑','🎩','💎','🔥','🍀','🎲','🃏','🚀'];
 function cleanAv(a){return AVS.includes(a)?a:null;}
 function cleanPh(p){return typeof p==='string'&&p.length<=21000&&/^data:image\/(webp|jpeg);base64,[A-Za-z0-9+\/=]+$/.test(p)?p:null;}
 // photos envoyées à part (pas dans chaque état) : indexées par siège
