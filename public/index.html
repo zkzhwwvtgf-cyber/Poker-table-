@@ -131,6 +131,7 @@ button.red{background:linear-gradient(180deg,#ff6a6a,#c81e1e);color:#fff;box-sha
 .chiprow{width:100%;display:flex;gap:10px;justify-content:center;align-items:center}#slider{width:100%;accent-color:#ff3ea5}
 #log{max-width:620px;margin:6px auto 0;font-size:11px;color:#c9b3ea;text-align:center}
 .loc{text-align:center;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#d7b9ff;opacity:.45;margin:14px 0 0;font-weight:600}
+#tapSnd{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);display:none;background:linear-gradient(90deg,#ff3ea5,#ffc83d);color:#fff;font-weight:900;padding:8px 16px;border-radius:999px;box-shadow:0 6px 18px #000a;z-index:58;font-size:13px;text-shadow:0 1px 2px #0006;pointer-events:none;white-space:nowrap}#tapSnd.show{display:block}
 #toast{position:fixed;left:50%;top:14px;transform:translateX(-50%) translateY(-90px);background:linear-gradient(90deg,#ff3ea5,#ffc83d);color:#fff;font-weight:900;padding:10px 18px;border-radius:999px;box-shadow:0 8px 24px #000a,0 0 20px #ff3ea5;transition:transform .35s cubic-bezier(.2,1.4,.4,1);z-index:60;font-size:14px;text-align:center;max-width:92%;text-shadow:0 1px 2px #0006}
 #toast.show{transform:translateX(-50%) translateY(0)}
 .modal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:70}.modal>div{max-width:440px;width:94%}
@@ -354,7 +355,7 @@ body::before{animation:none!important;inset:0;background:radial-gradient(ellipse
 .seat:not(.me) .cards.big .card.dim{opacity:.9;filter:grayscale(.2)}.seat:not(.me) .cards.big.sd.n7 .card,.seat:not(.me) .cards.big.sd.n5 .card{margin:0 -8px!important}
 .seat:not(.me) .cards.big.sd .card{animation:none!important}
 </style></head><body>
-<div id="toast"></div>
+<div id="tapSnd" role="status">🔈 Touche l'écran pour activer le son</div><div id="toast"></div>
 <div id="lobby"><div class="brand"><a class="tlink" href="https://poker-stephane.onrender.com" target="_self" aria-label="Steph&#39;s Table — accueil"><img class="hlogo" src="/chip-800-v2.webp?v=1" alt="Steph&#39;s Table" width="800" height="800" fetchpriority="high"></a><div class="wordmark rainbow" id="wm"></div><a class="tlink jbadge" href="https://poker-stephane.onrender.com" target="_self" aria-label="Rejoindre Steph&#39;s Table sur poker-stephane.onrender.com"><span class="tile"><img src="/chip-160-v2.webp?v=1" loading="lazy" width="160" height="160" alt="Steph&#39;s Table"></span><span class="cap">Steph&#39;s Table</span></a></div><div class="tagline">♠ ♥ Poker entre amis ♣ ♦</div>
 <div class="panel"><p style="text-align:center;margin:0 0 6px;color:#ffd9f0;font-size:14px">Jetons virtuels · 5 000 par joueur · 6 places</p>
 <label>Ton pseudo</label><input id="name" placeholder="ex. Steph" maxlength="14"><label>Ton avatar</label><div id="avgrid" class="avgrid"></div><label class="phbtn">📷 Ma photo<input type="file" accept="image/*" id="phin" hidden onchange="pickPhoto(this)"></label><div id="createBox">
@@ -395,9 +396,9 @@ function nm(){const n=normName($('name').value);$('name').value=n;if(!n){$('err'
  localStorage.pkName=n;return n;}
 // retour à l'accueil (pseudo gardé) ; table fermée -> écran « Créer la table »
 function toLobby(m,closed){joined=false;$('game').style.display='none';$('lobby').style.display='';$('name').value=localStorage.pkName||'';drawAv();if(closed){code=undefined;history.replaceState(0,'','/');$('createBox').style.display='';$('joinBtn').style.display='none';}$('err').textContent=m||'';scrollTo(0,0);}
-function create(){const n=nm();if(!n)return;sock.emit('create',{name:n,sb:$('sb').value,bb:$('bb').value,token},r=>{code=r.code;history.replaceState(0,'','/t/'+code);join();});}
-function join(){const n=nm();if(!n)return;sock.emit('join',{code,name:n,token,...avPay()},r=>{if(r.error){if(r.closed)return toLobby(r.error,true);$('err').textContent=r.error;return;}if(r.name)localStorage.pkName=r.name;joined=true;$('err').textContent='';$('lobby').style.display='none';$('game').style.display='block';if(r.spectator)toast('Table complète — mode spectateur');});}
-sock.on('connect',()=>{if(VOICE.on){Object.keys(VOICE.pcs).forEach(closePeer);setTimeout(()=>sock.emit('vjoin'),400);}if(joined)sock.emit('join',{code,name:localStorage.pkName,token,...avPay()},r=>{if(r&&r.error)toLobby(r.error,r.closed);});});
+function create(){const n=nm();if(!n)return;vPre();sock.emit('create',{name:n,sb:$('sb').value,bb:$('bb').value,token},r=>{code=r.code;history.replaceState(0,'','/t/'+code);join(1);});}
+function join(pre){const n=nm();if(!n)return;if(!pre)vPre();sock.emit('join',{code,name:n,token,...avPay()},r=>{if(r.error){VOICE.pend=null;if(r.closed)return toLobby(r.error,true);$('err').textContent=r.error;return;}vFinish();if(r.name)localStorage.pkName=r.name;joined=true;$('err').textContent='';$('lobby').style.display='none';$('game').style.display='block';if(r.spectator)toast('Table complète — mode spectateur');});}
+sock.on('connect',()=>{if(VOICE.on){Object.keys(VOICE.pcs).forEach(closePeer);setTimeout(()=>sock.emit('vjoin'),400);}if(joined)sock.emit('join',{code,name:localStorage.pkName,token,...avPay()},r=>{if(r&&r.error)return toLobby(r.error,r.closed);if(!VOICE.on&&!VOICE.busy&&localStorage.pkVoice!=='off')vAuto();});});
 sock.on('toast',t=>toast(t));
 let tt;function toast(t){const e=$('toast');e.textContent=t;{const g=$('game'),tp=g&&g.getClientRects().length&&g.querySelector('.top');e.style.top=tp?Math.round(tp.getBoundingClientRect().bottom+6)+'px':''}e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),3500);}
 const MN={holdem:"Hold'em",omaha:'Omaha',omahanl:'Omaha NL',dealer:'Choix du donneur',draw:'Five Card Draw Plus',huard:'Huardesque',stud:'Stud'};
@@ -548,16 +549,26 @@ function setMute(m){MUTE=m;localStorage.pkMute=m?'1':'0';const b=$('muteBtn');if
 // 25 : vocal WebRTC pair-à-pair (audio seul), signalisation par socket.io, STUN Google, pas de TURN
 const VOICE={on:false,muted:false,stream:null,pcs:{},peers:[],an:{},spk:{},state:{}};const ICE={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}]};
 async function getMic(){return navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});}
-async function vJoin(){if(VOICE.on)return;if(!navigator.mediaDevices||!window.RTCPeerConnection){toast('Vocal non disponible sur ce navigateur');return;}unlockA();
- try{VOICE.stream=await getMic();}catch(e){toast('Micro refusé — autorise le micro pour le vocal');return;}
- VOICE.on=true;VOICE.muted=false;watch('me',VOICE.stream);sock.emit('vjoin');vUI();toast('🎤 Vocal activé');}
-function vLeave(){if(!VOICE.on)return;VOICE.on=false;sock.emit('vleave');Object.keys(VOICE.pcs).forEach(closePeer);if(VOICE.stream)VOICE.stream.getTracks().forEach(t=>t.stop());VOICE.stream=null;delete VOICE.an.me;VOICE.peers=[];vUI();if(S)render();toast('Vocal quitté');}
+function vOK(){return !!(window.isSecureContext!==false&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.RTCPeerConnection);}
+function vStart(st){VOICE.stream=st;VOICE.on=true;VOICE.muted=false;watch('me',st);sock.emit('vjoin');vUI();toast('🎤 Vocal activé');vChk();}
+// Appelé de façon synchrone dans le tap « Créer »/« Rejoindre » : iOS considère la demande micro comme issue du geste.
+function vPre(){VOICE.pend=null;if(VOICE.on||VOICE.busy||localStorage.pkVoice==='off')return;VOICE.want=1;unlockA();if(!vOK())return;try{VOICE.pend=getMic();VOICE.pend.catch(()=>{});}catch(e){VOICE.pend=null;}}
+async function vFinish(){const pr=VOICE.pend,w=VOICE.want;VOICE.pend=null;VOICE.want=0;if(!w||VOICE.on||VOICE.busy)return;
+ if(!pr){localStorage.pkVoice='off';toast('Vocal non disponible ici — 🎤 pour réessayer');return;}
+ VOICE.busy=1;try{const st=await pr;if(VOICE.on)st.getTracks().forEach(t=>t.stop());else vStart(st);}catch(e){localStorage.pkVoice='off';toast('Micro refusé — autorise le micro pour le vocal');}finally{VOICE.busy=0;}}
+// Retour automatique à la table (sans tap) : on retente le vocal si le joueur l'avait laissé actif.
+async function vAuto(){if(VOICE.on||VOICE.busy||!vOK())return;VOICE.busy=1;try{const st=await getMic();if(!VOICE.on)vStart(st);else st.getTracks().forEach(t=>t.stop());}catch(e){}finally{VOICE.busy=0;}}
+async function vJoin(){if(VOICE.on||VOICE.busy)return;localStorage.pkVoice='on';if(!vOK()){toast('Vocal non disponible sur ce navigateur');return;}unlockA();
+ VOICE.busy=1;try{const st=await getMic();if(!VOICE.on)vStart(st);}catch(e){localStorage.pkVoice='off';toast('Micro refusé — autorise le micro pour le vocal');}finally{VOICE.busy=0;}}
+function vChk(){setTimeout(()=>{if(VOICE.on&&AC&&AC.state!=='running')needTap();},600);}
+function needTap(){const b=$('tapSnd');if(!b||b.classList.contains('show'))return;b.classList.add('show');const go=()=>{removeEventListener('pointerdown',go,true);removeEventListener('touchstart',go,true);b.classList.remove('show');unlockA();Object.values(VOICE.pcs).forEach(p=>p.audio&&p.audio.play().catch(()=>{}));};addEventListener('pointerdown',go,true);addEventListener('touchstart',go,true);}
+function vLeave(){if(!VOICE.on)return;localStorage.pkVoice='off';VOICE.on=false;sock.emit('vleave');Object.keys(VOICE.pcs).forEach(closePeer);if(VOICE.stream)VOICE.stream.getTracks().forEach(t=>t.stop());VOICE.stream=null;delete VOICE.an.me;VOICE.peers=[];vUI();if(S)render();toast('Vocal quitté');}
 function micTap(){if(!VOICE.on)return vJoin();VOICE.muted=!VOICE.muted;if(VOICE.stream)VOICE.stream.getAudioTracks().forEach(t=>t.enabled=!VOICE.muted);sock.emit('vmute',VOICE.muted);vUI();}
 function vUI(){const b=$('micBtn');b.textContent=!VOICE.on?'🎤':VOICE.muted?'🔇':'🎙️';b.classList.toggle('von',VOICE.on&&!VOICE.muted);b.classList.toggle('vmut',VOICE.on&&VOICE.muted);b.setAttribute('aria-label',!VOICE.on?'Rejoindre le vocal':VOICE.muted?'Réactiver le micro':'Couper le micro');$('vLeave').style.display=VOICE.on?'grid':'none';}
 function closePeer(id){const p=VOICE.pcs[id];if(!p)return;try{p.pc.close();}catch(e){}if(p.audio){p.audio.srcObject=null;p.audio.remove();}delete VOICE.pcs[id];delete VOICE.an[id];delete VOICE.state[id];}
 function mkPeer(id){const pc=new RTCPeerConnection(ICE),p={pc,audio:null};VOICE.pcs[id]=p;VOICE.stream.getTracks().forEach(t=>pc.addTrack(t,VOICE.stream));
  pc.onicecandidate=e=>{if(e.candidate)sock.emit('vsig',{to:id,data:{ice:e.candidate.toJSON()}});};
- pc.ontrack=e=>{const st=e.streams[0]||new MediaStream([e.track]);if(!p.audio){const a=document.createElement('audio');a.autoplay=true;a.setAttribute('playsinline','');a.className='vaudio';document.body.appendChild(a);p.audio=a;}p.audio.srcObject=st;p.audio.play().catch(()=>{});watch(id,st);};
+ pc.ontrack=e=>{const st=e.streams[0]||new MediaStream([e.track]);if(!p.audio){const a=document.createElement('audio');a.autoplay=true;a.setAttribute('playsinline','');a.className='vaudio';document.body.appendChild(a);p.audio=a;}p.audio.srcObject=st;p.audio.play().catch(()=>needTap());watch(id,st);};
  pc.onconnectionstatechange=()=>{VOICE.state[id]=pc.connectionState;if(pc.connectionState==='failed'){const q=VOICE.peers.find(x=>x.sid===id);toast('Connexion vocale impossible'+(q&&S&&S.seats[q.seat]?' avec '+S.seats[q.seat].name:''));}if(S)render();};
  return p;}
 async function offer(id){const p=mkPeer(id);const o=await p.pc.createOffer();await p.pc.setLocalDescription(o);sock.emit('vsig',{to:id,data:{sdp:p.pc.localDescription.toJSON()}});}
