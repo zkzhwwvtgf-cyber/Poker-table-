@@ -38,6 +38,9 @@ t('recave au choix 1 000 à 5 000 par 1 000',()=>{const T=sim('holdem');for(cons
   a.equal(T.seats[1].rebuys,5);a.equal(T.seats[1].rebuyTotal,15000);for(const v of [0,500,1500,6000,-1000,'abc']){T.seats[1].chips=0;a.equal(T.rebuy('b',v),false,'accepté '+v);}
   T.seats[1].chips=200;a.equal(T.rebuy('b',1000),false);T.seats[1].chips=100;a(T.rebuy('b',1000));a.equal(T.seats[1].chips,1100);T.seats[1].rebuys--;T.seats[1].rebuyTotal-=1000;a.equal(Table.fromJSON(JSON.parse(JSON.stringify(T.toJSON()))).seats[1].rebuyTotal,15000);});
 t('montants multiples de 100',()=>{const T=sim('holdem');T.startHand();const L=T.limits(T.toAct);a.equal(T.act(T.seats[T.toAct].id,'raise',L.minTo+50),false);a(T.act(T.seats[T.toAct].id,'raise',L.minTo+100));});
+// bilan en euros ÷ 200 (fonction client)
+{const src=require('fs').readFileSync(__dirname+'/public/index.html','utf8').match(/const d200=[^\n]*/)[0];const d20=new Function(src+';return d200;')();
+ t('bilan en euros (÷ 200) : signe, 2 décimales si non entier, € après espace',()=>{const E=s=>s+'\u00a0€';a.equal(d20(8400),E('+42'));a.equal(d20(17600),E('+88'));a.equal(d20(-26000),E('−130'));a.equal(d20(-2300),E('−11,50'));a.equal(d20(0),E('0'));a.equal(d20(-1),E('−0,01'));a.equal(d20(1234),E('+6,17'));});}
 // engagement choisi par le donneur : 50/100 ou 100/200
 {const mkB=()=>{const T=new Table({mode:'holdem',dealerChoice:true,choiceTimeout:40});['a','b','c','d'].forEach(x=>T.addPlayer(x,x.toUpperCase()));return T;};
  const end=T=>{let g=0;while(T.stage!=='showdown'&&g++<200){const i=T.toAct;if(T.stage==='draw')T.act(T.seats[i].id,'draw',[]);else T.act(T.seats[i].id,'fold')||T.act(T.seats[i].id,'check');}};
