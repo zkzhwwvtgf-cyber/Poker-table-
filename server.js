@@ -47,7 +47,7 @@ io.on('connection',sock=>{let room=null,tok=null;
         if(r.host===tok){const n=r.t.seats.find(x=>x&&x.connected)||r.t.seats.find(x=>x);if(n){r.host=n.id;r.t.log.push(n.name+' devient hôte');}}cleanup(r);},GRACE);}
     cleanup(r);});
 });
-const REACT=['😂','😱','👏','🍀','🔥','😎'];
+const REACT=['😂','😱','👏','🍀','🔥','😎','🤮'];
 const AVS=['p:stephane','p:david','p:john','p:thomas','p:fred','p:lolo','🦊','🐼','🐯','🦁','🐸','🐵','🐙','🦄','🐺','🐻','🐨','🐷','😎','🤠','🥷','🧙','👑','🎩','💎','🔥','🍀','🎲','🃏','🚀'];
 function cleanAv(a){return AVS.includes(a)?a:null;}
 function cleanPh(p){return typeof p==='string'&&p.length<=21000&&/^data:image\/(webp|jpeg);base64,[A-Za-z0-9+\/=]+$/.test(p)?p:null;}

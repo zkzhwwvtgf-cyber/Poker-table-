@@ -195,7 +195,7 @@ function serverTest(){const {spawn}=require('child_process'),{io}=require('socke
   console.log('✓ serveur : pas de reprise de siège par simple pseudo (jeton exigé)');
   // réactions : diffusées, 1 par seconde max (serveur)
   {let n=0;A.on('react',()=>n++);B2.emit('react','😂');B2.emit('react','🔥');B2.emit('react','😂');B2.emit('react','💩');await w(300);a.equal(n,1,'limite 1/s');
-   await w(900);B2.emit('react','👏');await w(200);a.equal(n,2);console.log('✓ serveur : réactions diffusées, limitées à 1/s, liste fermée');}
+   await w(900);B2.emit('react','👏');await w(200);a.equal(n,2);await w(900);let got=null;A.once('react',x=>got=x.e);B2.emit('react','🤮');await w(200);a.equal(got,'🤮');a.equal(n,3);console.log('✓ serveur : réactions diffusées, limitées à 1/s, liste fermée');}
   // avatar emoji + photo validés
   {const P=mk();await w(200);await new Promise(r=>P.emit('join',{code,name:'P',token:'tp',avatar:'🦊',photo:'javascript:x'},r));await w(150);const pi=A.st.seats.findIndex(x=>x&&x.name==='P');a.equal(A.st.seats[pi].avatar,'🦊');
    let ph=null;A.on('photos',m=>ph=m);P.emit('join',{code,name:'P',token:'tp',photo:'data:image/jpeg;base64,AAAA'},()=>{});await w(200);a.equal(A.st.seats[pi].avatar,'photo');a.equal(ph[pi],'data:image/jpeg;base64,AAAA');P.close();await w(100);console.log('✓ serveur : avatars (emoji, photo validée)');}
