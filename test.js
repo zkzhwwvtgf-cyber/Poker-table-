@@ -19,7 +19,7 @@ t('main complète, jetons conservés',()=>{const T=sim('holdem');T.startHand();l
   a.equal(T.stage,'showdown');a.equal(T.seats.reduce((s,x)=>s+(x?x.chips:0),0),15000);});
 t('tapis + side pot conservation',()=>{const T=sim('holdem');T.seats[0].chips=1000;T.startHand();let g=0;while(T.stage!=='showdown'&&g++<50){const i=T.toAct,L=T.limits(i);T.act(T.seats[i].id,L.canRaise?'raise':'call',L.maxTo);}
   a.equal(T.seats.reduce((s,x)=>s+(x?x.chips:0),0),11000);});
-t('PLO: relance plafonnée au pot',()=>{const T=sim('omaha');T.startHand();a.equal(T.hand.pl[T.toAct].hole.length,4);const L=T.limits(T.toAct);a.equal(L.maxTo,700);a.equal(L.maxTo%100,0);a.equal(T.act(T.seats[T.toAct].id,'raise',800),false);a.equal(T.act(T.seats[T.toAct].id,'raise',650),false);});
+t('PLO: relance plafonnée au pot',()=>{const T=sim('omaha');T.startHand();a.equal(T.hand.pl[T.toAct].hole.length,4);const L=T.limits(T.toAct);a.equal(L.maxTo,700);a.equal(L.maxTo%100,0);a.equal(T.act(T.seats[T.toAct].id,'raise',800),false);a.equal(T.act(T.seats[T.toAct].id,'raise',625),false);});
 t('pile de départ 5 000, blindes 100/200',()=>{const T=sim('holdem');a.equal(CONFIG.STACK,5000);a(T.seats.slice(0,3).every(x=>x.chips===5000));a.equal(T.sb,100);a.equal(T.bb,200);});
 t('6 places max, 7e refusé',()=>{const T=new Table();for(let i=0;i<6;i++)a(T.addPlayer('p'+i,'P'+i)>=0);a.equal(T.addPlayer('p7','P7'),-1);a.equal(T.view('p7').spectator,true);});
 t('recave +1 000 répétable, compteur, persistance',()=>{const T=sim('holdem');T.seats[1].chips=0;a(T.rebuy('b'));a.equal(T.seats[1].chips,1000);a.equal(T.rebuy('b'),false);
@@ -37,23 +37,32 @@ for(const [n,gaps] of [[4,[1,4]],[5,[2]],[6,[]]])t(n+' joueurs (sièges vides '+
 t('recave au choix 1 000 à 5 000 par 1 000',()=>{const T=sim('holdem');for(const v of [1000,2000,3000,4000,5000]){T.seats[1].chips=0;a(T.rebuy('b',v),'refus '+v);a.equal(T.seats[1].chips,v);}
   a.equal(T.seats[1].rebuys,5);a.equal(T.seats[1].rebuyTotal,15000);for(const v of [0,500,1500,6000,-1000,'abc']){T.seats[1].chips=0;a.equal(T.rebuy('b',v),false,'accepté '+v);}
   T.seats[1].chips=200;a.equal(T.rebuy('b',1000),false);T.seats[1].chips=100;a(T.rebuy('b',1000));a.equal(T.seats[1].chips,1100);T.seats[1].rebuys--;T.seats[1].rebuyTotal-=1000;a.equal(Table.fromJSON(JSON.parse(JSON.stringify(T.toJSON()))).seats[1].rebuyTotal,15000);});
-t('montants multiples de 100',()=>{const T=sim('holdem');T.startHand();const L=T.limits(T.toAct);a.equal(T.act(T.seats[T.toAct].id,'raise',L.minTo+50),false);a(T.act(T.seats[T.toAct].id,'raise',L.minTo+100));});
+t('montants multiples de 50',()=>{const T=sim('holdem');T.startHand();const L=T.limits(T.toAct);a.equal(T.act(T.seats[T.toAct].id,'raise',L.minTo+25),false);a(T.act(T.seats[T.toAct].id,'raise',L.minTo+50));});
 // bilan en euros ÷ 200 (fonction client)
 {const src=require('fs').readFileSync(__dirname+'/public/index.html','utf8').match(/const d200=[^\n]*/)[0];const d20=new Function(src+';return d200;')();
  t('bilan en euros (÷ 200) : signe, 2 décimales si non entier, € après espace',()=>{const E=s=>s+'\u00a0€';a.equal(d20(8400),E('+42'));a.ok(require('fs').readFileSync(__dirname+'/public/index.html','utf8').includes('${d200(p.bilan)} <span class="pct">50% appliqué</span>'));a.equal(d20(17600),E('+88'));a.equal(d20(-26000),E('−130'));a.equal(d20(-2300),E('−11,50'));a.equal(d20(0),E('0'));a.equal(d20(-1),E('−0,01'));a.equal(d20(1234),E('+6,17'));});}
+{const src=require('fs').readFileSync(__dirname+'/public/index.html','utf8').match(/const DEN=[^\n]*/)[0];const chips=new Function(src+';return chips;')();const n=(x,d,o)=>(chips(x,o).match(new RegExp('ch c'+d+'"','g'))||[]).length;
+t('jeton 50 : SB 50, 150, 250 dessinés',()=>{a.equal(n(50,50),1);a.equal(n(150,100),1);a.equal(n(150,50),1);a.equal(n(250,200),1);a.equal(n(250,50),1);a.equal(n(100,50),0);a.equal(n(400,50,1),2,'pot 100/200 : 2×50 décoratifs');a.equal(n(150,50,1),1);});}
 // engagement choisi par le donneur : 50/100 ou 100/200
 {const mkB=()=>{const T=new Table({mode:'holdem',dealerChoice:true,choiceTimeout:40});['a','b','c','d'].forEach(x=>T.addPlayer(x,x.toUpperCase()));return T;};
  const end=T=>{let g=0;while(T.stage!=='showdown'&&g++<200){const i=T.toAct;if(T.stage==='draw')T.act(T.seats[i].id,'draw',[]);else T.act(T.seats[i].id,'fold')||T.act(T.seats[i].id,'check');}};
  t('blindes : départ 100/200, le donneur choisit 50/100 -> SB 50 / BB 100, relance min et multiples de 50',()=>{const T=mkB();a.equal(T.sb,100);a.equal(T.bb,200);T.startHand();
    a(T.chooseVariant(T.seats[T.chooser].id,'holdem',false,100));a.equal(T.sb,50);a.equal(T.bb,100);const h=T.hand;a.equal(h.pl[h.sbI].bet,50);a.equal(h.pl[h.bbI].bet,100);a.equal(h.currentBet,100);
-   const L=T.limits(T.toAct);a.equal(L.minTo,200,'relance min = 2 BB');a.equal(T.view('a').bb,100);
+   const L=T.limits(T.toAct);a.equal(L.minTo,150,'relance min = BB + 50 à 50/100');a.equal(T.view('a').bb,100);
    a.equal(T.act(T.seats[T.toAct].id,'raise',225),false);a(T.act(T.seats[T.toAct].id,'raise',250),'250 accepté (unité 50)');end(T);});
+ t('50/100 : mise 50 et relance +50 dans les 4 jeux ; 100/200 inchangé',()=>{for(const v of ['holdem','omaha','draw','stud']){const T=mkB();T.startHand();a(T.chooseVariant(T.seats[T.chooser].id,v,false,100),v);const h=T.hand,id=()=>T.seats[T.toAct].id;
+   const cb=h.currentBet;a.equal(T.limits(T.toAct).minTo,cb+50,v+' min +50');a.equal(T.act(id(),'raise',cb+25),false,v+' +25 refusé');a(T.act(id(),'raise',cb+50),v+' +50 accepté');
+   const st=T.stage;let g=0;while(T.stage===st&&g++<20)T.act(id(),'call')||T.act(id(),'check');if(T.stage==='draw'){g=0;while(T.stage==='draw'&&g++<20)T.act(id(),'draw',[]);}
+   a.equal(h.currentBet,0,v+' nouveau tour');a.equal(T.limits(T.toAct).minTo,50,v+' mise min 50');a(T.act(id(),'raise',50),v+' mise 50 acceptée');end(T);
+   const U=mkB();U.startHand();U.chooseVariant(U.seats[U.chooser].id,v,false,200);const H=U.hand,uid=()=>U.seats[U.toAct].id,c2=H.currentBet;a.equal(U.limits(U.toAct).minTo,c2+50,v+' 100/200 relance +50');a.equal(U.act(uid(),'raise',c2+25),false,v+' +25 refusé');a(U.act(uid(),'raise',c2+50),v+' 100/200 +50 accepté');
+   const s2=U.stage;g=0;while(U.stage===s2&&g++<20)U.act(uid(),'call')||U.act(uid(),'check');if(U.stage==='draw'){g=0;while(U.stage==='draw'&&g++<20)U.act(uid(),'draw',[]);}
+   a.equal(U.limits(U.toAct).minTo,200,v+' ouverture min = BB');a.equal(U.act(uid(),'raise',150),false,v+' ouverture 150 refusée');a(U.act(uid(),'raise',200),v+' ouverture 200');a.equal(U.act(uid(),'raise',225),false);a(U.act(uid(),'raise',250),v+' 200->250');end(U);}});
  t('blindes : valeur invalide ignorée, retour à 100/200',()=>{const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'holdem',false,100);end(T);
    T.startHand();a(T.chooseVariant(T.seats[T.chooser].id,'holdem',false,999));a.equal(T.bb,100,'invalide -> inchangé');end(T);
-   T.startHand();T.chooseVariant(T.seats[T.chooser].id,'omaha',false,200);a.equal(T.sb,100);a.equal(T.bb,200);a.equal(T.hand.currentBet,200);const L=T.limits(T.toAct);a.equal(L.minTo,400);a.equal(L.maxTo%100,0);end(T);});
+   T.startHand();T.chooseVariant(T.seats[T.chooser].id,'omaha',false,200);a.equal(T.sb,100);a.equal(T.bb,200);a.equal(T.hand.currentBet,200);const L=T.limits(T.toAct);a.equal(L.minTo,250);a.equal(L.maxTo%100,0);end(T);});
  t('blindes : stud bring-in 50 à 50/100, 100 à 100/200',()=>{for(const [bb,bi] of [[100,50],[200,100]]){const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'stud',false,bb);a.equal(T.hand.pl[T.hand.bringIn].bet,bi);a.equal(T.hand.currentBet,bi);end(T);}});
- t('blindes : omaha pot-limit en multiples de 50 à 50/100',()=>{const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'omaha',false,100);const L=T.limits(T.toAct);a.equal(L.maxTo,350,'pot : 100 + 150 + 100');a.equal(L.minTo,200);end(T);});
- t('blindes : five card draw plus à 50/100',()=>{const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw',false,100);a.equal(T.hand.currentBet,100);a.equal(T.limits(T.toAct).minTo,200);end(T);});
+ t('blindes : omaha pot-limit en multiples de 50 à 50/100',()=>{const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'omaha',false,100);const L=T.limits(T.toAct);a.equal(L.maxTo,350,'pot : 100 + 150 + 100');a.equal(L.minTo,150);end(T);});
+ t('blindes : five card draw plus à 50/100',()=>{const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw',false,100);a.equal(T.hand.currentBet,100);a.equal(T.limits(T.toAct).minTo,150);end(T);});
  {const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'holdem',false,100);end(T);T.startHand();a.equal(T.stage,'choosing');
   setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.bb,100,'délai -> blindes précédentes');a.equal(T.sb,50);a.equal(T.hand.currentBet,100);clearTimeout(T.awayT);console.log('✓ blindes : délai 15 s -> blindes précédentes conservées (50/100)');},120);}}
 // choix du donneur sous le siège : 4 jeux, serveur autoritaire
@@ -102,7 +111,7 @@ t('montants multiples de 100',()=>{const T=sim('holdem');T.startHand();const L=T
    const h=T.hand;a.equal(T.potTotal(),100,'bring-in seul (pas de blindes)');const lo=h.bringIn,upc=j=>h.pl[j].hole[2];for(const j in h.pl)a(T.view('x')&&true);
    const RK='23456789TJQKA';for(const j in h.pl)a(RK.indexOf(upc(lo)[0])<=RK.indexOf(upc(j)[0]));
    const other=T.seats.findIndex((s,j)=>j!==+Object.keys(h.pl)[0]);const v=T.view('a'),me=0;for(const j in h.pl){const hv=v.seats[j].hole;if(+j===me){a.equal(hv.length,3);continue;}a.equal(hv[0],'??');a.equal(hv[1],'??');a.equal(hv[2],h.pl[j].hole[2]);}
-   const L=T.limits(T.toAct);a.equal(L.toCall,100);a.equal(L.minTo,200,'complément à 200');
+   const L=T.limits(T.toAct);a.equal(L.toCall,100);a.equal(L.minTo,150,'relance +50 sur bring-in');
    for(const [st,n,lastUp] of [['flop',4,true],['turn',5,true],['river',6,true],['seventh',7,false]]){let g=0;const s0=T.stage;while(T.stage===s0&&g++<50){const i=T.toAct;T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}
      a.equal(T.stage,st);for(const p of Object.values(h.pl)){a.equal(p.hole.length,n);a.equal(p.up[n-1],lastUp);}
      const vis=j=>h.pl[j].hole.filter((c,k)=>h.pl[j].up[k]);for(const j in h.pl)a(cmp(upScore(vis(T.toAct)),upScore(vis(j)))>=0,'1er à parler = meilleure main visible');}

@@ -101,7 +101,8 @@ class Table{
   post(i,a){const p=this.hand.pl[i],s=this.seats[i];a=Math.min(a,s.chips);s.chips-=a;p.bet+=a;p.total+=a;if(!s.chips)p.allin=true;}
   potTotal(){return Object.values(this.hand.pl).reduce((x,p)=>x+p.total,0);}
   limits(i){const h=this.hand,p=h.pl[i],s=this.seats[i],toCall=Math.min(h.currentBet-p.bet,s.chips);
-    const maxAll=p.bet+s.chips;let minTo=Math.min(h.currentBet+h.minRaise,maxAll);let maxTo=maxAll;
+    const maxAll=p.bet+s.chips;// mise d'ouverture min : 50 à 50/100, BB à 100/200 ; relance : +50 min, multiples de 50 (les 2 tables)
+    let minTo=Math.min(h.currentBet?h.currentBet+50:(this.bb<=100?50:this.bb),maxAll);let maxTo=maxAll;
     if(this.variant==='omaha')maxTo=Math.min(maxAll,Math.floor((h.currentBet+this.potTotal()+(h.currentBet-p.bet))/this.unit)*this.unit);minTo=Math.min(minTo,maxTo);
     return {toCall,minTo,maxTo,canRaise:maxAll>h.currentBet};}
   act(id,action,amount){
@@ -110,7 +111,7 @@ class Table{
     if(action==='fold'){p.folded=true;this.log.push(nm+' se couche');}
     else if(action==='check'){if(L.toCall>0)return false;this.log.push(nm+' check');}
     else if(action==='call'){if(L.toCall<=0)return false;this.post(i,L.toCall);this.log.push(nm+' suit');}
-    else if(action==='raise'){if(!L.canRaise)return false;let to=Math.round(+amount);if(!(to>=L.minTo&&to<=L.maxTo)||(to%this.unit&&to!==L.maxTo))return false;
+    else if(action==='raise'){if(!L.canRaise)return false;let to=Math.round(+amount);if(!(to>=L.minTo&&to<=L.maxTo)||(to%50&&to!==L.maxTo))return false;
       const inc=to-h.currentBet;if(inc>=h.minRaise)h.minRaise=inc;
       if(to>h.currentBet){h.currentBet=to;for(const q of Object.values(h.pl))q.acted=false;}
       this.post(i,to-p.bet);this.log.push(nm+(p.allin?' tapis à ':' relance à ')+to);}
