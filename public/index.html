@@ -178,7 +178,7 @@ h3{font-family:Bungee;margin:0 0 10px;color:#ffe27a}
 html.rm .rxf{animation:rxs 1.7s linear forwards}@keyframes rxs{0%,85%{opacity:1;transform:translate(-50%,-100%)}100%{opacity:0;transform:translate(-50%,-100%)}}html.rm #rxbar{transition:none}
 @keyframes acthide{0%,99%{opacity:0}100%{opacity:1}}
 .rech{margin:16px 0 6px;font-family:Bungee;font-size:14px;color:#ffe27a}.rec{display:grid;grid-template-columns:26px 1fr;gap:0 6px;padding:6px 0;border-bottom:1px solid #ffffff14;font-size:13px}.rec span{grid-row:span 2;font-size:18px}.rec em{font-style:normal;color:#d7b9ff}.rec small{color:#fff;margin-left:4px}
-@media (orientation:portrait){.chiprow{display:none!important}}
+@media (orientation:portrait){.chiprow{flex-wrap:nowrap!important;gap:4px!important;margin:0 0 2px}.chiprow .cbtn{width:38px!important;height:38px!important;flex:0 0 38px!important;font-size:10px!important}.chiprow .alt{padding:6px 10px!important;min-height:0!important}}
 /* lot 2 */
 .bub{position:fixed;z-index:45;pointer-events:none;font-weight:900;font-size:13px;padding:5px 12px;border-radius:999px;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;transform:translate(-50%,-100%);animation:bub 1.2s ease-out forwards;will-change:transform,opacity;box-shadow:0 4px 14px #0008}
 @keyframes bub{0%{opacity:0;transform:translate(-50%,-60%) scale(.5)}15%{opacity:1;transform:translate(-50%,-110%) scale(1.08)}25%{transform:translate(-50%,-110%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-190%) scale(.95)}}
@@ -541,7 +541,7 @@ let rxLast=0;function react(e){$('rxbar').classList.remove('open');const n=Date.
 sock.on('react',({seat,e})=>{const el=document.querySelector(`[data-seat="${seat}"]`);if(!el)return;const r=el.getBoundingClientRect(),f=document.createElement('div');f.className='rxf';f.textContent=e;
  f.style.left=(r.left+r.width/2)+'px';f.style.top=(r.top+r.height/2)+'px';document.body.appendChild(f);setTimeout(()=>f.remove(),1800);});
 let bubT={};function actHide(i,nl){if(RM())return'';const el=nl?0:Date.now()-(bubT[i]||0);return el<1200?`style="animation:acthide 1.2s linear both;animation-delay:-${el}ms"`:'';}
-function rt(x){return Math.round(x/100)*100;}
+function rt(x){return Math.round(x/50)*50;}
 function shortcuts(s,L){const my=s.seats[s.me].bet||0,pot=s.pot+L.toCall,cb=s.currentBet||0;
  const o=[['½ Pot',rt(cb+L.toCall*0+pot/2)],['Pot',rt(cb+pot)],[s.variant==='omaha'?'Max (pot)':'Tapis',L.maxTo]];
  return o.map(([t,v])=>{v=Math.min(L.maxTo,Math.max(L.minTo,v));return `<button class="sc" onclick="setTo(${v})">${t}</button>`;}).join('');}

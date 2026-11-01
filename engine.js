@@ -103,7 +103,7 @@ class Table{
   limits(i){const h=this.hand,p=h.pl[i],s=this.seats[i],toCall=Math.min(h.currentBet-p.bet,s.chips);
     const maxAll=p.bet+s.chips;// mise d'ouverture min : 50 à 50/100, BB à 100/200 ; relance : +50 min, multiples de 50 (les 2 tables)
     let minTo=Math.min(h.currentBet?h.currentBet+50:(this.bb<=100?50:this.bb),maxAll);let maxTo=maxAll;
-    if(this.variant==='omaha')maxTo=Math.min(maxAll,Math.floor((h.currentBet+this.potTotal()+(h.currentBet-p.bet))/this.unit)*this.unit);minTo=Math.min(minTo,maxTo);
+    if(this.variant==='omaha')maxTo=Math.min(maxAll,Math.floor((h.currentBet+this.potTotal()+(h.currentBet-p.bet))/50)*50);minTo=Math.min(minTo,maxTo);
     return {toCall,minTo,maxTo,canRaise:maxAll>h.currentBet};}
   act(id,action,amount){
     const i=this.seatOf(id),h=this.hand;if(h&&this.stage==='draw'&&i===this.toAct&&action==='draw')return this.draw(i,amount);if(!h||i!==this.toAct||!BET.includes(this.stage))return false;
