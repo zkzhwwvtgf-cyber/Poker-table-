@@ -38,6 +38,21 @@ t('recave au choix 1 000 à 5 000 par 1 000',()=>{const T=sim('holdem');for(cons
   a.equal(T.seats[1].rebuys,5);a.equal(T.seats[1].rebuyTotal,15000);for(const v of [0,500,1500,6000,-1000,'abc']){T.seats[1].chips=0;a.equal(T.rebuy('b',v),false,'accepté '+v);}
   T.seats[1].chips=200;a.equal(T.rebuy('b',1000),false);T.seats[1].chips=100;a(T.rebuy('b',1000));a.equal(T.seats[1].chips,1100);T.seats[1].rebuys--;T.seats[1].rebuyTotal-=1000;a.equal(Table.fromJSON(JSON.parse(JSON.stringify(T.toJSON()))).seats[1].rebuyTotal,15000);});
 t('montants multiples de 100',()=>{const T=sim('holdem');T.startHand();const L=T.limits(T.toAct);a.equal(T.act(T.seats[T.toAct].id,'raise',L.minTo+50),false);a(T.act(T.seats[T.toAct].id,'raise',L.minTo+100));});
+// engagement choisi par le donneur : 50/100 ou 100/200
+{const mkB=()=>{const T=new Table({mode:'holdem',dealerChoice:true,choiceTimeout:40});['a','b','c','d'].forEach(x=>T.addPlayer(x,x.toUpperCase()));return T;};
+ const end=T=>{let g=0;while(T.stage!=='showdown'&&g++<200){const i=T.toAct;if(T.stage==='draw')T.act(T.seats[i].id,'draw',[]);else T.act(T.seats[i].id,'fold')||T.act(T.seats[i].id,'check');}};
+ t('blindes : départ 100/200, le donneur choisit 50/100 -> SB 50 / BB 100, relance min et multiples de 50',()=>{const T=mkB();a.equal(T.sb,100);a.equal(T.bb,200);T.startHand();
+   a(T.chooseVariant(T.seats[T.chooser].id,'holdem',false,100));a.equal(T.sb,50);a.equal(T.bb,100);const h=T.hand;a.equal(h.pl[h.sbI].bet,50);a.equal(h.pl[h.bbI].bet,100);a.equal(h.currentBet,100);
+   const L=T.limits(T.toAct);a.equal(L.minTo,200,'relance min = 2 BB');a.equal(T.view('a').bb,100);
+   a.equal(T.act(T.seats[T.toAct].id,'raise',225),false);a(T.act(T.seats[T.toAct].id,'raise',250),'250 accepté (unité 50)');end(T);});
+ t('blindes : valeur invalide ignorée, retour à 100/200',()=>{const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'holdem',false,100);end(T);
+   T.startHand();a(T.chooseVariant(T.seats[T.chooser].id,'holdem',false,999));a.equal(T.bb,100,'invalide -> inchangé');end(T);
+   T.startHand();T.chooseVariant(T.seats[T.chooser].id,'omaha',false,200);a.equal(T.sb,100);a.equal(T.bb,200);a.equal(T.hand.currentBet,200);const L=T.limits(T.toAct);a.equal(L.minTo,400);a.equal(L.maxTo%100,0);end(T);});
+ t('blindes : stud bring-in 50 à 50/100, 100 à 100/200',()=>{for(const [bb,bi] of [[100,50],[200,100]]){const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'stud',false,bb);a.equal(T.hand.pl[T.hand.bringIn].bet,bi);a.equal(T.hand.currentBet,bi);end(T);}});
+ t('blindes : omaha pot-limit en multiples de 50 à 50/100',()=>{const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'omaha',false,100);const L=T.limits(T.toAct);a.equal(L.maxTo,350,'pot : 100 + 150 + 100');a.equal(L.minTo,200);end(T);});
+ t('blindes : five card draw plus à 50/100',()=>{const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'draw',false,100);a.equal(T.hand.currentBet,100);a.equal(T.limits(T.toAct).minTo,200);end(T);});
+ {const T=mkB();T.startHand();T.chooseVariant(T.seats[T.chooser].id,'holdem',false,100);end(T);T.startHand();a.equal(T.stage,'choosing');
+  setTimeout(()=>{a.equal(T.stage,'preflop');a.equal(T.bb,100,'délai -> blindes précédentes');a.equal(T.sb,50);a.equal(T.hand.currentBet,100);clearTimeout(T.awayT);console.log('✓ blindes : délai 15 s -> blindes précédentes conservées (50/100)');},120);}}
 // choix du donneur sous le siège : 4 jeux, serveur autoritaire
 {const {upScore}=require('./engine');const mk=()=>{const T=new Table({mode:'holdem',dealerChoice:true,choiceTimeout:40});['a','b','c','d'].forEach(x=>T.addPlayer(x,x.toUpperCase()));return T;};
  const play=T=>{let g=0;while(T.stage!=='showdown'&&g++<200){const i=T.toAct;if(T.stage==='draw')T.act(T.seats[i].id,'draw',[]);else T.act(T.seats[i].id,T.limits(i).toCall?'call':'check');}a.equal(T.stage,'showdown');};

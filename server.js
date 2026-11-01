@@ -26,7 +26,7 @@ io.on('connection',sock=>{let room=null,tok=null;
     if(i>=0){r.t.setConnected(tok,true);const st=r.t.seats[i];st.avatar=ph?'photo':av;r.photos=r.photos||{};if(ph)r.photos[tok]=ph;else delete r.photos[tok];}r.sockets[sock.id]=tok;sock.join('r'+r.code);cb&&cb({ok:true});push(r);sendPhotos(r);if(r.voice)sendVoice(r);});
   const g=f=>(...a)=>{if(room){f(...a);push(room);}};
   sock.on('start',g(()=>{if(room.host===tok||room.t.stage==='showdown')room.t.startHand();}));
-  sock.on('choose',g(v=>room.t.chooseVariant(tok,v)));
+  sock.on('choose',g(v=>{if(v&&typeof v==='object')room.t.chooseVariant(tok,v.v,false,v.bb);else room.t.chooseVariant(tok,v);}));
   sock.on('act',g(({action,amount})=>room.t.act(tok,action,amount)));
   sock.on('settings',g(({sb,bb})=>{if(room.host!==tok)return;const t=room.t;if(!['waiting','showdown'].includes(t.stage))return;if(!sb&&!bb)return;if(+sb&&sb%100===0)t.sb=+sb;if(+bb&&bb%100===0)t.bb=+bb;t.log.push('Blindes : '+t.sb+'/'+t.bb);}));
   sock.on('reset',g(()=>{if(room.host===tok){room.t.fullReset();io.to('r'+room.code).emit('toast','Table réinitialisée : tout le monde repart à 5 000');}}));

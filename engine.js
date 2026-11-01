@@ -66,6 +66,9 @@ class Table{
   setMode(m){if(!['holdem','omaha','omahanl','dealer'].includes(m))return false;const NM={holdem:"Hold'em",omaha:'Omaha',omahanl:'Omaha NL',dealer:'Choix du donneur'};
     if(this.stage==='waiting'||this.stage==='showdown'){this.mode=m;this.pendingMode=null;if(m!=='dealer')this.variant=m;this.log.push((this.stage==='waiting'?'Variante : ':'Prochaine main : ')+NM[m]);}
     else{this.pendingMode=m;this.log.push('Prochaine main : '+NM[m]);}return true;}
+  // engagement choisi par le donneur : 50/100 ou 100/200 (unité de mise = petite blinde)
+  setBlinds(b,auto){const bb=+(typeof b==='object'&&b?b.bb:b);const L=Table.BLINDS.find(x=>x.bb===bb);if(!L)return false;if(L.bb!==this.bb||L.sb!==this.sb){this.sb=L.sb;this.bb=L.bb;this.log.push((auto?'(délai) ':'')+'Blindes '+L.sb+'/'+L.bb);}return true;}
+  get unit(){return this.bb<=100?50:CONFIG.UNIT;}
   startHand(){
     if(this.stage!=='waiting'&&this.stage!=='showdown')return false;
     if(this.ready().length<2){const m='Pas assez de joueurs avec des jetons — recavez-vous (💰 Se recaver)';if(this.log[this.log.length-1]!==m)this.log.push(m);return false;}
@@ -79,8 +82,8 @@ class Table{
     this.variant=VARS.includes(this.mode)?this.mode:'holdem';this.deal();return true;
   }
   nextDealer(){if(this.button<0)return -1;return this.next(this.button,s=>s.chips>0&&!s.sitOut);}
-  chooseVariant(id,v,auto){if(this.stage!=='choosing'||this.seats[this.chooser]?.id!==id)return false;if(!(this.dealerChoice?['holdem','omaha','draw','stud']:VARS).includes(v))return false;
-    clearTimeout(this.timer);this.variant=v;if(this.dealerChoice&&this.mode!=='dealer')this.mode=v;this.chosenAt=Date.now();this.log.push((auto?'(délai) ':'')+this.seats[this.chooser].name+' choisit '+({omaha:'Omaha PL',omahanl:'Omaha NL',draw:'Five Card Draw Plus',stud:'Stud'}[v]||"Hold'em"));this.deal();return true;}
+  chooseVariant(id,v,auto,blinds){if(this.stage!=='choosing'||this.seats[this.chooser]?.id!==id)return false;if(!(this.dealerChoice?['holdem','omaha','draw','stud']:VARS).includes(v))return false;
+    clearTimeout(this.timer);if(this.dealerChoice&&blinds!=null)this.setBlinds(blinds,auto);this.variant=v;if(this.dealerChoice&&this.mode!=='dealer')this.mode=v;this.chosenAt=Date.now();this.log.push((auto?'(délai) ':'')+this.seats[this.chooser].name+' choisit '+({omaha:'Omaha PL',omahanl:'Omaha NL',draw:'Five Card Draw Plus',stud:'Stud'}[v]||"Hold'em"));this.deal();return true;}
   deal(){
     const n=HOLEN[this.variant]||(isOmaha(this.variant)?4:2),deck=newDeck();
     const pl={};this.seats.forEach((s,i)=>{if(s&&s.chips>0&&!s.sitOut)pl[i]={hole:[],up:[],bet:0,total:0,folded:false,allin:false,acted:false};});
@@ -89,7 +92,7 @@ class Table{
     const ids=Object.keys(pl).map(Number);
     if(this.variant==='stud'){// pas de blindes : bring-in 100 par la plus petite carte visible (♣<♦<♥<♠), complément à 200
       const lo=ids.slice().sort((a,b)=>{const x=pl[a].hole[2],y=pl[b].hole[2];return rv(x)-rv(y)||SUITV[x[1]]-SUITV[y[1]];})[0];
-      this.post(lo,Math.min(CONFIG.UNIT,this.bb));this.hand.currentBet=pl[lo].bet;this.hand.minRaise=this.bb-pl[lo].bet>0?this.bb-pl[lo].bet:this.bb;this.hand.bringIn=lo;this.log.push(this.seats[lo].name+' ouvre (bring-in '+pl[lo].bet+')');
+      this.post(lo,Math.min(this.unit,this.bb));this.hand.currentBet=pl[lo].bet;this.hand.minRaise=this.bb-pl[lo].bet>0?this.bb-pl[lo].bet:this.bb;this.hand.bringIn=lo;this.log.push(this.seats[lo].name+' ouvre (bring-in '+pl[lo].bet+')');
       this.toAct=this.next(lo,(s,j)=>pl[j]&&!pl[j].allin);this.hand.turnStart=Date.now();this.checkRound();this.scheduleAway();return;}
     let sbI,bbI;if(ids.length===2){sbI=this.button;bbI=this.next(sbI,(s,j)=>pl[j]);}else{sbI=this.next(this.button,(s,j)=>pl[j]);bbI=this.next(sbI,(s,j)=>pl[j]);}
     this.post(sbI,this.sb);this.post(bbI,this.bb);this.hand.currentBet=this.bb;this.hand.sbI=sbI;this.hand.bbI=bbI;
@@ -99,7 +102,7 @@ class Table{
   potTotal(){return Object.values(this.hand.pl).reduce((x,p)=>x+p.total,0);}
   limits(i){const h=this.hand,p=h.pl[i],s=this.seats[i],toCall=Math.min(h.currentBet-p.bet,s.chips);
     const maxAll=p.bet+s.chips;let minTo=Math.min(h.currentBet+h.minRaise,maxAll);let maxTo=maxAll;
-    if(this.variant==='omaha')maxTo=Math.min(maxAll,Math.floor((h.currentBet+this.potTotal()+(h.currentBet-p.bet))/CONFIG.UNIT)*CONFIG.UNIT);minTo=Math.min(minTo,maxTo);
+    if(this.variant==='omaha')maxTo=Math.min(maxAll,Math.floor((h.currentBet+this.potTotal()+(h.currentBet-p.bet))/this.unit)*this.unit);minTo=Math.min(minTo,maxTo);
     return {toCall,minTo,maxTo,canRaise:maxAll>h.currentBet};}
   act(id,action,amount){
     const i=this.seatOf(id),h=this.hand;if(h&&this.stage==='draw'&&i===this.toAct&&action==='draw')return this.draw(i,amount);if(!h||i!==this.toAct||!BET.includes(this.stage))return false;
@@ -107,7 +110,7 @@ class Table{
     if(action==='fold'){p.folded=true;this.log.push(nm+' se couche');}
     else if(action==='check'){if(L.toCall>0)return false;this.log.push(nm+' check');}
     else if(action==='call'){if(L.toCall<=0)return false;this.post(i,L.toCall);this.log.push(nm+' suit');}
-    else if(action==='raise'){if(!L.canRaise)return false;let to=Math.round(+amount);if(!(to>=L.minTo&&to<=L.maxTo)||(to%CONFIG.UNIT&&to!==L.maxTo))return false;
+    else if(action==='raise'){if(!L.canRaise)return false;let to=Math.round(+amount);if(!(to>=L.minTo&&to<=L.maxTo)||(to%this.unit&&to!==L.maxTo))return false;
       const inc=to-h.currentBet;if(inc>=h.minRaise)h.minRaise=inc;
       if(to>h.currentBet){h.currentBet=to;for(const q of Object.values(h.pl))q.acted=false;}
       this.post(i,to-p.bet);this.log.push(nm+(p.allin?' tapis à ':' relance à ')+to);}
@@ -144,7 +147,7 @@ class Table{
       const ev={};for(const j of live)ev[j]=bestHand(h.pl[j].hole,h.board,this.variant);
       const pots=sidePots(Object.entries(h.pl).map(([j,p])=>({id:+j,amount:p.total,folded:p.folded})));
       for(const pot of pots){let best=null,ws=[];for(const j of pot.eligible){const c=best?cmp(ev[j].score,best):1;if(c>0){best=ev[j].score;ws=[j];}else if(c===0)ws.push(j);}
-        const N=this.seats.length,U=CONFIG.UNIT;ws.sort((a,b)=>((a-this.button-1+N)%N)-((b-this.button-1+N)%N));const share=Math.floor(pot.amount/ws.length/U)*U;let odd=pot.amount-share*ws.length;
+        const N=this.seats.length,U=this.unit;ws.sort((a,b)=>((a-this.button-1+N)%N)-((b-this.button-1+N)%N));const share=Math.floor(pot.amount/ws.length/U)*U;let odd=pot.amount-share*ws.length;
         for(const w of ws){const x=Math.min(odd,U);odd-=x;const a=share+x;this.seats[w].chips+=a;res.push({seat:w,amount:a,name:this.seats[w].name,hand:ev[w].name,cards:ev[w].cards});this.log.push(this.seats[w].name+' gagne '+a+' ('+ev[w].name+')');}}
       h.shown=Object.fromEntries(live.map(j=>[j,{hole:h.pl[j].hole,name:ev[j].name}]));}
     this.record(res,live.length===1,h);h.results=res;this.stage='showdown';this.toAct=-1;clearTimeout(this.awayT);this.awayKey=null;}
@@ -181,4 +184,5 @@ class Table{
         hole:h&&h.pl[i]?(i===me?h.pl[i].hole:(h.shown&&h.shown[i]&&this.stage==='showdown'?h.shown[i].hole:h.pl[i].hole.map((c,k)=>h.pl[i].up&&h.pl[i].up[k]?c:'??'))):[],up:h&&h.pl[i]&&this.variant==='stud'?h.pl[i].up:null,drawn:h&&h.pl[i]&&h.pl[i].drawn!=null?h.pl[i].drawn:null,
         handName:h&&h.shown&&h.shown[i]?h.shown[i].name:null})};}
 }
+Table.BLINDS=[{sb:50,bb:100},{sb:100,bb:200}];
 module.exports={upScore,isOmaha,CONFIG,eval5,bestHand,sidePots,Table,cmp};
