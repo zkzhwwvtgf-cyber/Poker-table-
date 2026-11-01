@@ -16,14 +16,20 @@ function push(r){for(const [sid,tok] of Object.entries(r.sockets)){const s=io.so
 io.on('connection',sock=>{let room=null,tok=null;
   sock.on('create',({name,sb,bb,token},cb)=>{const mode='holdem';const c=code();const t=new Table({mode,sb:+sb||CONFIG.SB,bb:+bb||CONFIG.BB,awayDelay:AWAY,dealerChoice:true,choiceTimeout:+process.env.CHOICE_MS||15000});
     const r=rooms[c]={code:c,t,host:token,sockets:{},grace:{}};t.onChange=()=>push(r);cb&&cb({code:c});});
-  sock.on('join',({code:c,name,token,avatar,photo},cb)=>{const r=rooms[(c||'').toUpperCase()];if(!r)return cb&&cb({error:'Table introuvable'});
-    room=r;tok=String(token||sock.id);r.toks=r.toks||{};if(token)r.toks[tok]=1;let i=r.t.seatOf(tok);const nm=(normName(name)||'Joueur').slice(0,14);const av=cleanAv(avatar),ph=cleanPh(photo);
-    // reconnexion par le même pseudo pendant le délai de grâce : on reprend le siège (et sa pile)
-    if(i<0){// seulement si le siège n'a pas de jeton (sinon il faut le même jeton) : pas de vol de siège
-    const j=r.t.seats.findIndex(x=>x&&!x.connected&&x.name===nm&&!r.toks[x.id]);if(j>=0){const old=r.t.seats[j].id;clearTimeout(r.grace[old]);delete r.grace[old];if(r.host===old)r.host=tok;r.t.seats[j].id=tok;i=j;}}
+  sock.on('join',({code:c,name,token,avatar,photo},cb)=>{const r=rooms[(c||'').toUpperCase()];if(!r)return cb&&cb({error:CLOSED,closed:true});
+    tok=String(token||sock.id);let i=r.t.seatOf(tok);const av0=cleanAv(avatar),ph=cleanPh(photo),av=ph?'photo':av0;
+    // règle unique des pseudos (serveur) : reconnexion du même jeton -> nom du siège conservé
+    const nm=i>=0?r.t.seats[i].name:normName(name);if(!nm)return cb&&cb({error:'Choisis un pseudo'});
+    const bad=bindErr(nm,av);
+    if(i<0){if(bad)return cb&&cb({error:bad});
+      const j=r.t.seats.findIndex(x=>x&&nameKey(x.name)===nameKey(nm));
+      if(j>=0){const x=r.t.seats[j];// reprise depuis un autre appareil : siège déconnecté, en délai de grâce, même pseudo ET même avatar (non vide)
+        if(x.connected||!r.grace[x.id]||!av||x.avatar!==av)return cb&&cb({error:'Ce pseudo est déjà pris'});
+        const old=x.id;clearTimeout(r.grace[old]);delete r.grace[old];if(r.host===old)r.host=tok;if(r.photos&&r.photos[old]){r.photos[tok]=r.photos[old];delete r.photos[old];}x.id=tok;i=j;r.t.log.push(x.name+' reprend sa place');}}
+    room=r;
     if(i>=0&&r.grace[tok]){clearTimeout(r.grace[tok]);delete r.grace[tok];}
-    if(i<0){i=r.t.addPlayer(tok,nm);if(i<0){r.sockets[sock.id]=tok;sock.join('r'+r.code);cb&&cb({ok:true,spectator:true,msg:'Table complète'});return push(r);}r.t.log.push(r.t.seats[i].name+' rejoint la table');}
-    if(i>=0){r.t.setConnected(tok,true);const st=r.t.seats[i];st.avatar=ph?'photo':av;r.photos=r.photos||{};if(ph)r.photos[tok]=ph;else delete r.photos[tok];}r.sockets[sock.id]=tok;sock.join('r'+r.code);cb&&cb({ok:true});push(r);sendPhotos(r);if(r.voice)sendVoice(r);});
+    if(i<0){i=r.t.addPlayer(tok,nm);if(i<0){r.sockets[sock.id]=tok;sock.join('r'+r.code);cb&&cb({ok:true,spectator:true,name:nm,msg:'Table complète'});return push(r);}r.t.log.push(r.t.seats[i].name+' rejoint la table');}
+    {r.t.setConnected(tok,true);const st=r.t.seats[i];if(!bad){st.avatar=av;r.photos=r.photos||{};if(ph)r.photos[tok]=ph;else if(av!=='photo')delete r.photos[tok];}}r.sockets[sock.id]=tok;sock.join('r'+r.code);cb&&cb({ok:true,name:nm,avatar:r.t.seats[i].avatar});push(r);sendPhotos(r);if(r.voice)sendVoice(r);});
   const g=f=>(...a)=>{if(room){f(...a);push(room);}};
   sock.on('start',g(()=>{if(room.host===tok||room.t.stage==='showdown')room.t.startHand();}));
   sock.on('choose',g(v=>{if(v&&typeof v==='object')room.t.chooseVariant(tok,v.v,false,v.bb);else room.t.chooseVariant(tok,v);}));
@@ -41,7 +47,7 @@ io.on('connection',sock=>{let room=null,tok=null;
     const v=room.voice||{};if(!v[sock.id]||!v[msg.to]||!room.sockets[msg.to])return;let d;try{d=JSON.stringify(msg.data);}catch(e){return;}if(!d||d.length>VMAX)return;
     io.to(msg.to).emit('vsig',{from:sock.id,data:msg.data});});
   // changement d'avatar en cours de partie (portrait, emoji, photo ou initiale)
-  sock.on('avatar',g(o=>{const i=room.t.seatOf(tok);if(i<0||!o||typeof o!=='object')return;const ph=cleanPh(o.photo),av=cleanAv(o.avatar);room.t.seats[i].avatar=ph?'photo':av;room.photos=room.photos||{};if(ph)room.photos[tok]=ph;else delete room.photos[tok];sendPhotos(room);}));
+  sock.on('avatar',g((o,cb)=>{const i=room.t.seatOf(tok);if(i<0||!o||typeof o!=='object')return;const ph=cleanPh(o.photo),av=ph?'photo':cleanAv(o.avatar);const bad=bindErr(room.t.seats[i].name,av);if(bad){typeof cb==='function'?cb({error:bad}):sock.emit('toast',bad);return;}room.t.seats[i].avatar=av;if(typeof cb==='function')cb({ok:true});room.photos=room.photos||{};if(ph)room.photos[tok]=ph;else delete room.photos[tok];sendPhotos(room);}));
   sock.on('rebuy',g(amount=>room.t.rebuy(tok,amount===undefined?1000:amount)));
   sock.on('disconnect',()=>{if(!room)return;const r=room;delete r.sockets[sock.id];if(r.voice&&r.voice[sock.id]){delete r.voice[sock.id];sendVoice(r);}
     if(!Object.values(r.sockets).includes(tok)&&r.t.seatOf(tok)>=0){r.t.setConnected(tok,false);clearTimeout(r.grace[tok]);
@@ -51,7 +57,15 @@ io.on('connection',sock=>{let room=null,tok=null;
 });
 const REACT=['😂','😱','👏','🍀','🔥','😎','🤮'];
 const AVS=['p:stephane','p:david','p:john','p:thomas','p:fred','p:lolo','🦊','🐼','🐯','🦁','🐸','🐵','🐙','🦄','🐺','🐻','🐨','🐷','😎','🤠','🥷','🧙','👑','🎩','💎','🔥','🍀','🎲','🃏','🚀'];
-function normName(n){const t=String(n||'').trim(),k=t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return k==='stephane'?'Steph':k==='david'?'Dave':t;}
+const CLOSED='La table a été fermée (mise à jour du site), crée-en une nouvelle';
+const strip=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+// pseudo : espaces nettoyés, 14 caractères max, Stéphane/David -> Steph/Dave
+function normName(n){const t=String(n||'').replace(/\s+/g,' ').trim(),k=strip(t);return (k==='stephane'?'Steph':k==='david'?'Dave':t).slice(0,14).trim();}
+// clé de comparaison : sans accents, majuscules ni espaces
+const nameKey=n=>strip(normName(n)).replace(/\s/g,'');
+// portraits liés à leur pseudo
+const BIND={steph:'p:stephane',dave:'p:david',john:'p:john',thomas:'p:thomas',fred:'p:fred',lolo:'p:lolo'},PNAME={'p:stephane':'Steph','p:david':'Dave','p:john':'John','p:thomas':'Thomas','p:fred':'Fred','p:lolo':'Lolo'};
+function bindErr(nm,av){const want=BIND[nameKey(nm)];if(PNAME[av]&&want!==av)return 'Ce portrait va avec le pseudo '+PNAME[av];if(want&&av!==want)return 'Ce pseudo va avec son portrait';return null;}
 function cleanAv(a){return AVS.includes(a)?a:null;}
 function cleanPh(p){return typeof p==='string'&&p.length<=21000&&/^data:image\/(webp|jpeg);base64,[A-Za-z0-9+\/=]+$/.test(p)?p:null;}
 // photos envoyées à part (pas dans chaque état) : indexées par siège

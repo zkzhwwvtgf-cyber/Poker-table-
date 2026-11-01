@@ -189,15 +189,34 @@ function serverTest(){const {spawn}=require('child_process'),{io}=require('socke
   await new Promise(r=>C.emit('join',{code,name:'C',token:'tc'},r));await w(100);a.equal(A.st.seats.filter(x=>x).length,3);
   // vol de siège : même pseudo mais autre jeton -> nouveau siège, l'ancien reste réservé
   const ci=A.st.seats.findIndex(x=>x&&x.name==='C');C.close();await w(150);a.equal(A.st.seats[ci].connected,false);
-  const X=mk();await w(200);await new Promise(r=>X.emit('join',{code,name:'C',token:'tx'},r));await w(150);
-  a.equal(A.st.seats[ci].connected,false,'siège volé');a.equal(A.st.seats.filter(x=>x).length,4);X.close();
+  const X=mk();await w(200);const rx=await new Promise(r=>X.emit('join',{code,name:' c ',token:'tx'},r));await w(150);a.equal(rx.error,'Ce pseudo est déjà pris');
+  a.equal(A.st.seats[ci].connected,false,'siège volé');a.equal(A.st.seats.filter(x=>x).length,3);X.close();
   const C2=mk();await w(200);await new Promise(r=>C2.emit('join',{code,name:'C',token:'tc'},r));await w(150);a.equal(A.st.seats[ci].connected,true);C2.close();await w(100);
   console.log('✓ serveur : pas de reprise de siège par simple pseudo (jeton exigé)');
+  // doublons : accents, majuscules et espaces ignorés ; même jeton accepté
+  {const D1=mk(),D2=mk(),D3=mk();await w(200);const r1=await new Promise(r=>D1.emit('join',{code,name:'Hélène',token:'th1',avatar:'🐼'},r));a(r1.ok);a.equal(r1.name,'Hélène');
+   const r2=await new Promise(r=>D2.emit('join',{code,name:'  HELENE ',token:'th2',avatar:'🐼'},r));a.equal(r2.error,'Ce pseudo est déjà pris');
+   const r3=await new Promise(r=>D3.emit('join',{code,name:'Hé lène',token:'th3'},r));a.equal(r3.error,'Ce pseudo est déjà pris');
+   const r4=await new Promise(r=>D1.emit('join',{code,name:'autre',token:'th1',avatar:'🐼'},r));a(r4.ok);a.equal(r4.name,'Hélène','reconnexion : nom du siège gardé');
+   // reprise depuis un autre appareil pendant la grâce : même pseudo + même avatar -> même siège, même pile, nouveau jeton
+   const hi=A.st.seats.findIndex(x=>x&&x.name==='Hélène');A.st.seats[hi];D1.close();await w(150);const ch=A.st.seats[hi].chips;
+   const D4=mk();await w(200);const r5=await new Promise(r=>D4.emit('join',{code,name:'helene',token:'th4',avatar:'🦊'},r));a.equal(r5.error,'Ce pseudo est déjà pris','avatar différent');
+   const r6=await new Promise(r=>D4.emit('join',{code,name:'helene',token:'th4',avatar:'🐼'},r));a(r6.ok);await w(150);a.equal(D4.st.me,hi);a.equal(A.st.seats[hi].connected,true);a.equal(A.st.seats[hi].chips,ch);
+   // après la grâce : siège libéré
+   D4.close();await w(1100);a.equal(A.st.seats.filter(x=>x&&x.name==='Hélène').length,0,'siège libéré après la grâce');
+   D2.close();D3.close();console.log('✓ serveur : pseudo déjà pris (accents/majuscules/espaces), reconnexion, reprise pendant la grâce');}
+  // portraits liés à leur pseudo
+  {const K=mk();await w(200);let r=await new Promise(f=>K.emit('join',{code,name:'Fred',token:'tk',avatar:'🦊'},f));a.equal(r.error,'Ce pseudo va avec son portrait');
+   r=await new Promise(f=>K.emit('join',{code,name:'Bob',token:'tk',avatar:'p:fred'},f));a.equal(r.error,'Ce portrait va avec le pseudo Fred');
+   r=await new Promise(f=>K.emit('join',{code,name:'Lolo',token:'tk',avatar:'p:fred'},f));a.equal(r.error,'Ce portrait va avec le pseudo Fred');
+   r=await new Promise(f=>K.emit('join',{code,name:'fréd',token:'tk',avatar:'p:fred'},f));a(r.ok);a.equal(r.name,'fréd');
+   r=await new Promise(f=>K.emit('avatar',{avatar:'p:john'},f));a.equal(r.error,'Ce portrait va avec le pseudo John');await w(100);a.equal(A.st.seats[K.st.me].avatar,'p:fred');
+   K.close();await w(100);console.log('✓ serveur : portrait ↔ pseudo (arrivée et changement d\'avatar)');}
   // réactions : diffusées, 1 par seconde max (serveur)
   {let n=0;A.on('react',()=>n++);B2.emit('react','😂');B2.emit('react','🔥');B2.emit('react','😂');B2.emit('react','💩');await w(300);a.equal(n,1,'limite 1/s');
    await w(900);B2.emit('react','👏');await w(200);a.equal(n,2);await w(900);let got=null;A.once('react',x=>got=x.e);B2.emit('react','🤮');await w(200);a.equal(got,'🤮');a.equal(n,3);console.log('✓ serveur : réactions diffusées, limitées à 1/s, liste fermée');}
-  {B2.emit('avatar',{avatar:'🦊'});await w(250);a.equal(A.st.seats[B2.st.me].avatar,'🦊');B2.emit('avatar',{avatar:'p:stephane'});await w(250);a.equal(A.st.seats[B2.st.me].avatar,'p:stephane');B2.emit('avatar',{avatar:'💩'});await w(250);a.equal(A.st.seats[B2.st.me].avatar,null);console.log('✓ serveur : avatar changé en cours de partie, liste fermée');}
-  {const Y=mk(),Z=mk();await w(200);await new Promise(r=>Y.emit('join',{code,name:' STÉPHANE ',token:'ty'},r));await new Promise(r=>Z.emit('join',{code,name:'david',token:'tz'},r));await w(150);const ns=A.st.seats.filter(x=>x).map(x=>x.name);a.ok(ns.includes('Steph')&&ns.includes('Dave'),ns.join());a.ok(!ns.some(n=>/st[eé]phane|david/i.test(n)));Y.close();Z.close();await w(100);console.log('✓ serveur : anciens pseudos Stéphane/David → Steph/Dave');}
+  {B2.emit('avatar',{avatar:'🦊'});await w(250);a.equal(A.st.seats[B2.st.me].avatar,'🦊');B2.emit('avatar',{avatar:'p:stephane'});await w(250);a.equal(A.st.seats[B2.st.me].avatar,'🦊','portrait d\'un autre refusé');B2.emit('avatar',{avatar:'💩'});await w(250);a.equal(A.st.seats[B2.st.me].avatar,null);console.log('✓ serveur : avatar changé en cours de partie, liste fermée');}
+  {const Y=mk(),Z=mk();await w(200);await new Promise(r=>Y.emit('join',{code,name:' STÉPHANE ',token:'ty',avatar:'p:stephane'},r));await new Promise(r=>Z.emit('join',{code,name:'david',token:'tz',avatar:'p:david'},r));await w(150);const ns=A.st.seats.filter(x=>x).map(x=>x.name);a.ok(ns.includes('Steph')&&ns.includes('Dave'),ns.join());a.ok(!ns.some(n=>/st[eé]phane|david/i.test(n)));Y.close();Z.close();await w(100);console.log('✓ serveur : anciens pseudos Stéphane/David → Steph/Dave');}
   // avatar emoji + photo validés
   {const P=mk();await w(200);await new Promise(r=>P.emit('join',{code,name:'P',token:'tp',avatar:'🦊',photo:'javascript:x'},r));await w(150);const pi=A.st.seats.findIndex(x=>x&&x.name==='P');a.equal(A.st.seats[pi].avatar,'🦊');
    let ph=null;A.on('photos',m=>ph=m);P.emit('join',{code,name:'P',token:'tp',photo:'data:image/jpeg;base64,AAAA'},()=>{});await w(200);a.equal(A.st.seats[pi].avatar,'photo');a.equal(ph[pi],'data:image/jpeg;base64,AAAA');P.close();await w(100);console.log('✓ serveur : avatars (emoji, photo validée)');}
@@ -218,5 +237,5 @@ function serverTest(){const {spawn}=require('child_process'),{io}=require('socke
    a.deepEqual(C1.st.seats[C2.st.me].hole,['??','??','??','??']);X.close();Y.close();console.log('✓ serveur : choix du donneur autoritaire (Omaha -> 4 cartes)');}
   // plus personne connecté : la table survit pendant la grâce, puis disparaît
   A.close();B2.close();C.close();await w(300);const D=mk();await w(200);const r1=await new Promise(r=>D.emit('join',{code,name:'A',token:'ta'},r));a(r1.ok,'table supprimée pendant la grâce');await w(150);
-  a(D.st.seats.filter(x=>x).length>=1);D.close();await w(1500);const E=mk();await w(200);const r2=await new Promise(r=>E.emit('join',{code,name:'Z',token:'tz'},r));a.equal(r2.error,'Table introuvable');E.close();
+  a(D.st.seats.filter(x=>x).length>=1);D.close();await w(1500);const E=mk();await w(200);const r2=await new Promise(r=>E.emit('join',{code,name:'Z',token:'tz'},r));a.equal(r2.error,'La table a été fermée (mise à jour du site), crée-en une nouvelle');a(r2.closed);E.close();
   console.log('✓ serveur : grâce 120 s, reconnexion jeton, table conservée puis supprimée');S.kill();console.log('Tests serveur OK');process.exit(0);})().catch(fail);}
